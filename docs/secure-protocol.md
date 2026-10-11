@@ -197,7 +197,11 @@ strings occupy the remaining bytes as nonempty valid UTF-8, without a length fie
 Commands are up=0, down=1, left=2, right=3, mid/Space=4, backspace=5, enter=6,
 spotlight=7. Mac keycodes are respectively 126, 125, 123, 124, 49, 51, 36; spotlight
 posts Cmd+Space (Command keycode 55 down, 49 down/up, 55 up) on press and nothing on
-release. Pointer buttons are left=0, right=1;
+release. System keys are brightnessUp=8, brightnessDown=9, volumeUp=10, volumeDown=11,
+previousTrack=12, playPause=13, nextTrack=14; on press the Mac posts a system-defined
+event (subtype 8, `NX_KEYTYPE` 2, 3, 0, 1, 18, 16, 17) down and up, and nothing on
+release. The phone repeats held brightness/volume itself. Mac builds before 1.5 reject
+commands 8-14 and fail the session. Pointer buttons are left=0, right=1;
 count is a raw UInt8 (the codec adds no narrower range restriction). Scroll phases
 are began=1, changed=2, ended=3, momentumBegan=4, momentum=5, momentumEnded=6;
 scroll deltas are pixels in content direction (positive dy reveals content above).

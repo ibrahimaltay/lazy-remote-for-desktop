@@ -10,6 +10,13 @@ public enum Command: UInt8, CaseIterable, Sendable {
     case backspace = 5
     case enter = 6
     case spotlight = 7
+    case brightnessUp = 8
+    case brightnessDown = 9
+    case volumeUp = 10
+    case volumeDown = 11
+    case previousTrack = 12
+    case playPause = 13
+    case nextTrack = 14
 }
 
 /// A press or a release of one button.
@@ -50,6 +57,13 @@ extension Command {
         case .backspace: "BACKSPACE"
         case .enter: "ENTER"
         case .spotlight: "SPOTLIGHT"
+        case .brightnessUp: "BRIGHTNESS_UP"
+        case .brightnessDown: "BRIGHTNESS_DOWN"
+        case .volumeUp: "VOLUME_UP"
+        case .volumeDown: "VOLUME_DOWN"
+        case .previousTrack: "PREVIOUS"
+        case .playPause: "PLAY_PAUSE"
+        case .nextTrack: "NEXT"
         }
     }
 

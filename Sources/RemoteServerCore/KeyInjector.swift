@@ -1,9 +1,11 @@
+import AppKit
 import ApplicationServices
 import CoreGraphics
 import RemoteProtocol
 
 extension Command {
-    var keyCode: CGKeyCode {
+    /// Nil for system keys, which have no virtual key code.
+    var keyCode: CGKeyCode? {
         switch self {
         case .up: 126
         case .down: 125
@@ -13,14 +15,26 @@ extension Command {
         case .backspace: 51
         case .enter: 36
         case .spotlight: 49
+        default: nil
+        }
+    }
+
+    /// `NX_KEYTYPE_*` from IOKit's ev_keymap.h.
+    var systemKey: Int? {
+        switch self {
+        case .volumeUp: 0
+        case .volumeDown: 1
+        case .brightnessUp: 2
+        case .brightnessDown: 3
+        case .playPause: 16
+        case .nextTrack: 17
+        case .previousTrack: 18
+        default: nil
         }
     }
 
     var isArrow: Bool {
-        switch self {
-        case .up, .down, .left, .right: true
-        case .mid, .backspace, .enter, .spotlight: false
-        }
+        [.up, .down, .left, .right].contains(self)
     }
 }
 
@@ -50,9 +64,14 @@ public struct KeyInjector: @unchecked Sendable {
             if event.isDown { openSpotlight() }
             return
         }
-        guard let cgEvent = CGEvent(
+        if let key = event.command.systemKey {
+            // Repeat comes from the phone, so each press is a full down/up on its own.
+            if event.isDown { postSystemKey(key) }
+            return
+        }
+        guard let keyCode = event.command.keyCode, let cgEvent = CGEvent(
             keyboardEventSource: source,
-            virtualKey: event.command.keyCode,
+            virtualKey: keyCode,
             keyDown: event.isDown
         ) else { return }
 
@@ -126,6 +145,17 @@ public struct KeyInjector: @unchecked Sendable {
             space?.post(tap: .cghidEventTap)
         }
         commandUp?.post(tap: .cghidEventTap)
+    }
+
+    /// The same event the hardware function row sends, so macOS shows its volume/brightness HUD.
+    private func postSystemKey(_ key: Int) {
+        for state in [0xA, 0xB] {
+            NSEvent.otherEvent(
+                with: .systemDefined, location: .zero, modifierFlags: NSEvent.ModifierFlags(rawValue: UInt(state << 8)),
+                timestamp: 0, windowNumber: 0, context: nil,
+                subtype: 8, data1: (key << 16) | (state << 8), data2: -1
+            )?.cgEvent?.post(tap: .cghidEventTap)
+        }
     }
 
     private func tapReturn() {

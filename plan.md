@@ -112,5 +112,5 @@ unversioned `LazyRemote.dmg` that `scripts/release-mac.sh` produces. Keep
   encryption export classification/compliance review. Do not automatically change
   the iOS export flag before that review.
 
-Media/system-volume keys, custom key mapping, and simultaneous control of multiple
+Custom key mapping and simultaneous control of multiple
 Macs from one phone remain out of scope. No release gate above is marked complete.
