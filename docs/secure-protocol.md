@@ -46,8 +46,8 @@ into whichever application receives the Mac's events.
 The client subscribes to control notifications before sending ClientHello. The
 server allocates peer state on subscription. Reads are unsupported. Writes must
 have ATT offset zero. Missing secure characteristics or required properties fail
-with an update-required status; old key/control UUID constants and legacy payload
-helpers remaining in the package are not published or accepted by these endpoints.
+with an update-required status. Legacy plaintext characteristics and text-chunk
+helpers have been removed; these endpoints never publish or accept that transport.
 
 ## Handshake Bytes
 
@@ -364,3 +364,16 @@ Obtain independent protocol/security review. Complete signing/notarization and
 App Store preparation, and review encryption export classification/compliance.
 Do not treat earlier plaintext hardware tests as secure-v2 validation or change
 the iOS export declaration automatically without that review.
+
+The following gates remain open; none is marked complete by a build or cleanup:
+
+- Physical secure-v2 iPhone/Mac testing, including packet inspection for plaintext
+  leakage, MTU fragmentation, sustained backpressure, failures, sleep/wake,
+  reconnection, multiple peers, held-key cleanup, and receipt ambiguity.
+- Pin-change/update/re-pairing flows and Keychain key-loss, approval, and removal
+  failure tests on hardware, including unsuccessful revocation across restart.
+- Independent protocol/security review before treating the custom handshake as
+  release-ready.
+- Developer ID signing, hardened runtime, notarization release validation, App
+  Store review preparation, privacy disclosures, and encryption export
+  classification/compliance review.

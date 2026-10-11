@@ -74,7 +74,6 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
 
     public init(
         serviceName: String = RemoteService.defaultName,
-        defaults: UserDefaults = .standard,
         keyStore: (any SecureKeyStore)? = nil
     ) {
         self.serviceName = serviceName

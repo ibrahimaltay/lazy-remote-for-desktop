@@ -24,8 +24,7 @@ public enum SwipeDirection: UInt8, Sendable, CaseIterable {
     case down = 3
 }
 
-/// Trackpad traffic. Key events keep their own untagged two-byte format, so these
-/// carry a leading tag and the two are told apart by payload length.
+/// Trackpad payloads, carried inside `SecureMessage`'s pointer tag.
 public enum PointerEvent: Equatable, Sendable {
     case move(dx: Int16, dy: Int16)
     /// A whole click, expanded into press and release on the Mac: a dropped packet

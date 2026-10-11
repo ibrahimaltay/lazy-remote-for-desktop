@@ -55,7 +55,7 @@ final class SecureTransportTests: XCTestCase {
         var (_, server) = try connect(mtu: 20)
         for legacy in [KeyEvent(command: .up, isDown: true).encoded,
                        PointerEvent.move(dx: 1, dy: 1).encoded,
-                       TextChunk(isFinal: true, bytes: Data("secret".utf8)).encoded] {
+                       Data([3, 1]) + Data("secret".utf8)] {
             var assembler = SecureFrameAssembler()
             XCTAssertThrowsError(try assembler.accept(legacy))
             XCTAssertThrowsError(try server.open(legacy, lane: .clientInput))
