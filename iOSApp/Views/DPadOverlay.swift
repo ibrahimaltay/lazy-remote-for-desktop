@@ -18,18 +18,48 @@ struct DPadOverlay: View {
                 .gesture(DragGesture(minimumDistance: 0).onChanged { _ in close() })
                 .accessibilityHidden(true)
 
-            VStack(spacing: 28) {
+            HStack(alignment: .top, spacing: 6) {
+                sideCapsule([
+                    (.brightnessUp, "sun.max", "Brightness up"),
+                    (.brightnessDown, "sun.min", "Brightness down"),
+                ])
                 pad
-                Button(action: close) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(Color(.systemGray4).opacity(0.8), in: Circle())
-                }
-                .accessibilityLabel("Close")
+                sideCapsule([
+                    (.volumeUp, "speaker.wave.3", "Volume up"),
+                    (.volumeDown, "speaker.wave.1", "Volume down"),
+                ])
             }
+            .overlay(alignment: .bottom) {
+                capsule(
+                    [
+                        (.previousTrack, "backward", "Previous track"),
+                        (.playPause, "playpause", "Play / Pause"),
+                        (.nextTrack, "forward", "Next track"),
+                    ],
+                    axis: .horizontal, segment: CGSize(width: 70, height: 56), repeats: false
+                )
+                .offset(y: 60 + 56)
+            }
+            // Dim as one layer, or the gaps show through the center button.
+            .compositingGroup()
+            .opacity(model.isConnected ? 1 : 0.35)
             .scaleEffect(isShown ? 1 : 0.92)
+            // Sits a little below screen center, toward the thumb.
+            .offset(y: 44)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea()
+
+            Button(action: close) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color(.systemGray4).opacity(0.8), in: Circle())
+            }
+            .accessibilityLabel("Close")
+            .padding(.bottom, 40)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .ignoresSafeArea()
         }
         // The backdrop is dark in both appearances, so the pad always uses dark colors.
         .environment(\.colorScheme, .dark)
@@ -50,10 +80,10 @@ struct DPadOverlay: View {
             segment(.left, "chevron.left", "Left", degrees: 180)
             Circle()
                 .fill(Color(red: 10 / 255, green: 10 / 255, blue: 12 / 255).opacity(0.85))
-                .frame(width: 130, height: 130)
+                .frame(width: 114, height: 114)
             DPadKey(
-                shape: Circle(), size: 116, command: .mid, symbol: "playpause.fill",
-                label: "Play/Pause", fill: Color(.systemGray3), iconSize: 32, model: model
+                shape: Circle(), size: CGSize(width: 100, height: 100), command: .mid, symbol: "space",
+                label: "Space", fill: Color(.systemGray3), iconSize: 30, model: model
             )
             .overlay {
                 Circle()
@@ -64,20 +94,46 @@ struct DPadOverlay: View {
                     .allowsHitTesting(false)
             }
         }
-        .frame(width: 300, height: 300)
+        .frame(width: 236, height: 236)
         .clipShape(Circle())
         .shadow(color: .black.opacity(0.5), radius: 25, y: 20)
-        // Dim as one layer, or the gaps show through the center button.
-        .compositingGroup()
-        .opacity(model.isConnected ? 1 : 0.35)
+    }
+
+    private func sideCapsule(_ keys: [(Command, String, String)]) -> some View {
+        capsule(keys, axis: .vertical, segment: CGSize(width: 48, height: 71.5), repeats: true)
+            .offset(y: -69)
+    }
+
+    /// Equal segments 5pt apart, clipped to one capsule, like the function-row keys.
+    private func capsule(
+        _ keys: [(Command, String, String)], axis: Axis, segment: CGSize, repeats: Bool
+    ) -> some View {
+        let layout = axis == .vertical
+            ? AnyLayout(VStackLayout(spacing: 5)) : AnyLayout(HStackLayout(spacing: 5))
+        return ZStack {
+            // Swallows touches in the gaps so they don't reach the backdrop and close the pad.
+            Color.clear.contentShape(Capsule())
+            layout {
+                ForEach(keys, id: \.0) { command, symbol, label in
+                    DPadKey(
+                        shape: Rectangle(), size: segment, command: command, symbol: symbol, label: label,
+                        fill: Color(.systemGray4).opacity(0.92), iconSize: 20, iconWeight: .regular,
+                        repeats: repeats, model: model
+                    )
+                }
+            }
+        }
+        .fixedSize()
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.5), radius: 25, y: 20)
     }
 
     private func segment(_ command: Command, _ symbol: String, _ label: String, degrees: Double) -> some View {
         let angle = Angle.degrees(degrees)
         return DPadKey(
-            shape: Wedge(angle: angle), size: 300, command: command, symbol: symbol, label: label,
-            fill: Color(.systemGray4).opacity(0.92),
-            iconOffset: CGSize(width: 102 * cos(angle.radians), height: 102 * sin(angle.radians)),
+            shape: Wedge(angle: angle), size: CGSize(width: 236, height: 236), command: command,
+            symbol: symbol, label: label, fill: Color(.systemGray4).opacity(0.92),
+            iconOffset: CGSize(width: 80 * cos(angle.radians), height: 80 * sin(angle.radians)),
             model: model
         )
     }
@@ -110,20 +166,23 @@ private struct Wedge: Shape {
 }
 
 /// Press on touch-down, release on lift or when the finger leaves the shape;
-/// the Mac repeats while held, same as the old control row.
+/// the Mac repeats held keys, while `repeats` keys re-tap from here because system keys don't.
 private struct DPadKey<S: Shape>: View {
     let shape: S
-    let size: CGFloat
+    let size: CGSize
     let command: Command
     let symbol: String
     let label: String
     let fill: Color
     var iconOffset = CGSize.zero
     var iconSize: CGFloat = 26
+    var iconWeight = Font.Weight.semibold
+    var repeats = false
     let model: RemoteViewModel
 
     @State private var isPressed = false
     @State private var hasLeft = false
+    @State private var repeatTask: Task<Void, Never>?
     // Resets on cancellation too, where onEnded never fires and a key would stay held.
     @GestureState private var isTouching = false
 
@@ -132,25 +191,25 @@ private struct DPadKey<S: Shape>: View {
             .fill(isPressed ? Color.accentColor : fill)
             .overlay {
                 Image(systemName: symbol)
-                    .font(.system(size: iconSize, weight: .semibold))
+                    .font(.system(size: iconSize, weight: iconWeight))
                     .foregroundStyle(.white)
                     .offset(iconOffset)
             }
             .animation(.easeOut(duration: 0.12), value: isPressed)
-            .frame(width: size, height: size)
+            .frame(width: size.width, height: size.height)
             .contentShape(shape)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .updating($isTouching) { _, touching, _ in touching = true }
                     .onChanged { value in
                         guard !hasLeft else { return }
-                        let bounds = CGRect(x: 0, y: 0, width: size, height: size)
+                        let bounds = CGRect(origin: .zero, size: size)
                         if !shape.path(in: bounds).contains(value.location) {
                             hasLeft = true
                             release()
                         } else if !isPressed, model.isConnected {
                             isPressed = true
-                            model.press(command)
+                            press()
                         }
                     }
             )
@@ -166,9 +225,26 @@ private struct DPadKey<S: Shape>: View {
             .accessibilityAction { model.tap(command) }
     }
 
+    private func press() {
+        guard repeats else { return model.press(command) }
+        model.tap(command)
+        repeatTask = Task {
+            try? await Task.sleep(for: .milliseconds(450))
+            while !Task.isCancelled {
+                model.tap(command, feedback: false)
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+    }
+
     private func release() {
         guard isPressed else { return }
         isPressed = false
-        model.release(command)
+        if repeats {
+            repeatTask?.cancel()
+            repeatTask = nil
+        } else {
+            model.release(command)
+        }
     }
 }

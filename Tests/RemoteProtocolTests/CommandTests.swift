@@ -17,6 +17,8 @@ final class CommandTests: XCTestCase {
         XCTAssertEqual(KeyEvent(command: .mid, isDown: true).encoded, Data([4, 1]))
         XCTAssertEqual(KeyEvent(command: .enter, isDown: true).encoded, Data([6, 1]))
         XCTAssertEqual(KeyEvent(command: .spotlight, isDown: true).encoded, Data([7, 1]))
+        XCTAssertEqual(KeyEvent(command: .volumeUp, isDown: true).encoded, Data([10, 1]))
+        XCTAssertEqual(KeyEvent(command: .nextTrack, isDown: false).encoded, Data([14, 0]))
     }
 
     func testDecodesFromASliceThatDoesNotStartAtZero() {
@@ -34,6 +36,7 @@ final class CommandTests: XCTestCase {
         XCTAssertEqual(Command(name: "right"), .right)
         XCTAssertEqual(Command(name: "enter"), .enter)
         XCTAssertEqual(Command(name: "spotlight"), .spotlight)
-        XCTAssertNil(Command(name: "VOLUME_UP"))
+        XCTAssertEqual(Command(name: "volume_up"), .volumeUp)
+        XCTAssertNil(Command(name: "EJECT"))
     }
 }
