@@ -31,7 +31,7 @@ public struct KeyEvent: Equatable, Sendable {
 }
 
 extension KeyEvent {
-    /// Every message is exactly this many bytes, which is all the framing we need.
+    /// Size of the key payload inside a tagged `SecureMessage`.
     public static let wireSize = 2
 
     public var encoded: Data {

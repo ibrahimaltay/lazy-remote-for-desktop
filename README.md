@@ -130,6 +130,76 @@ reset succeeds. Do not assume restarting clears approvals: a failed deletion
 can leave them saved.
 
 
+## Development
+
+Shared, testable behavior lives in the Swift package under `Sources/`:
+`RemoteProtocol` defines wire encodings, `RemoteSecurity` handles encrypted
+sessions and Keychain trust, and `RemoteClientCore`/`RemoteServerCore` implement
+the iPhone central and Mac peripheral. The SwiftUI shells are in `iOSApp/` and
+`macApp/`. There is no Wi-Fi or Bonjour transport.
+
+The package supports macOS 13 / iOS 17; the apps target macOS 14 / iOS 17.
+Swift 6 strict concurrency is enabled. Both apps require Bluetooth permission;
+Mac input injection also requires Accessibility access and a stable code identity.
+The Mac app is a non-sandboxed, hardened-runtime menu-bar app.
+
+```sh
+swift build
+swift test
+swift test --filter RemoteSecurityTests
+swift test --filter SecureHandshakeTests/testPinnedHandshakeAndKeyConfirmation
+
+xcodegen generate
+xcodebuild -project MacRemote.xcodeproj -scheme MacRemote \
+  -configuration Debug -derivedDataPath .build/dd -quiet build
+xcodebuild -project MacRemote.xcodeproj -scheme RemoteDPad \
+  -configuration Debug -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/dd -quiet build
+open .build/dd/Build/Products/Debug/LazyRemote.app
+```
+
+`swift test` covers the package targets; filter by target, class, or
+`ClassName/testMethodName`. There is no configured lint command.
+`project.yml` is the XcodeGen source of truth, including app versions. Generate
+before opening/building a fresh checkout and after changing project settings or
+adding/removing app files. The Xcode project and both app Info.plists are generated
+and ignored; keep lasting configuration changes in `project.yml`.
+
+The retained `remotectl` harness exercises `keytest`, `swipe`, `serve`, and `send`
+without a phone. Package it with `scripts/make-app.sh` before Mac injection tests:
+a bare executable lacks the stable code identity needed for dependable events.
+Its `serve --allow-new` option is for testing only.
+
+Trackpad gain, direction, gestures, and phone-side momentum are tuned in
+`Sources/RemoteClientCore/Resources/TrackpadTuning.json`, bundled with the client.
+`RemoteClientCoreTests` covers this behavior. The Mac posts continuous scroll
+events rather than calculating momentum.
+
+Read [docs/secure-protocol.md](docs/secure-protocol.md) before changing wire bytes,
+handshake, trust, or transport. Builds and unit tests do not establish physical
+secure-v2 BLE behavior or complete the documented release gates. Custom key mapping
+and controlling multiple Macs simultaneously from one phone remain out of scope.
+
+## Website and distribution
+
+The website is ordinary static HTML in `site/`, deployed by
+`.github/workflows/pages.yml`. The workflow copies the `readme-gifs/*.gif`
+demos into the Pages artifact. No JavaScript or frontend build is required.
+Support is at the homepage's `#support` section, and the canonical published
+privacy policy is [site/privacy.html](site/privacy.html); `PRIVACY.md` points to
+that single maintained policy. The original App Store badge is a local SVG asset.
+
+The intended distribution is a free Mac app through GitHub/website and a free
+iPhone app through the App Store. App Store distribution remains a goal, not
+already completed.
+
+`scripts/release-mac.sh` creates a Developer ID signed, notarized, stapled DMG in
+`.build/release/` and requires a configured notarytool profile. Each release must
+attach the unversioned `LazyRemote.dmg` it produces because the website links to
+`releases/latest/download/LazyRemote.dmg`. Signing/notarization and App Store
+readiness still require validation; see the
+[outstanding release gates](docs/secure-protocol.md#outstanding-release-gates).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
