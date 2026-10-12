@@ -1,14 +1,14 @@
-# Copilot instructions
+# Agent instructions
 
 ## Shared references
 
-[README.md](../README.md) maintains architecture, build/test commands, CLI usage,
+[README.md](README.md) maintains architecture, build/test commands, CLI usage,
 website maintenance, and distribution instructions. Use `swift test` for package
 tests and Xcode builds for both app targets. Filter by test target, class, or
 `ClassName/testMethodName` for targeted validation. There is no configured lint
 command.
 
-[docs/secure-protocol.md](../docs/secure-protocol.md) is the canonical wire format,
+[docs/secure-protocol.md](docs/secure-protocol.md) is the canonical wire format,
 connection state, trust policy, and security specification. Read it before
 changing handshake, framing, message encoding, or pairing. Its release gates are
 not satisfied by builds/tests alone.
@@ -37,3 +37,11 @@ not satisfied by builds/tests alone.
 - Mac input injection requires Accessibility permission and a stable code
   identity. Retain `remotectl` and use `scripts/make-app.sh` for bundled injection
   tests.
+
+## Feature work
+
+Each feature has a folder in `docs/features/<name>/` with `plan.md` and design
+notes; copy `docs/features/_template/` to start one. Read the feature folder
+before implementing and keep the `plan.md` checklist current. The QA log in
+`plan.md` is written only by the user and the tester agent. Design files in the
+folder are the source of truth for UI values; do not edit them.
