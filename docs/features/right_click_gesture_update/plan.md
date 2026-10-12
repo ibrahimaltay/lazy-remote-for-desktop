@@ -1,6 +1,6 @@
 # Right Click Gesture Update 
 
-Status: in progress
+Status: shipped
 
 ## Goal
 
