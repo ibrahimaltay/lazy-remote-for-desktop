@@ -1,6 +1,6 @@
 # Spotlight search design update
 
-Status: in progress
+Status: shipped
 
 ## Goal
 
