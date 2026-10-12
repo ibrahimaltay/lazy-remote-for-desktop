@@ -79,7 +79,8 @@ show its `shortcut:` ledger alongside the notes. STOP: the user edits and
 approves the notes. Pushing the `feature/*` branch and cutting a `-beta` tag are
 pre-authorized; confirm with the user before any production tag or anything on
 main. After the release succeeds, set `Status: shipped` in plan.md, then commit
-and push that follow-up to the feature branch. Then ask the user for a go to open
+and push that follow-up to the feature branch. For iphone or both releases, the deployer
+uploads to TestFlight first (ask before it runs). Then ask the user for a go to open
 the PR; on their go, have `deployer` run `scripts/create-pr.sh` and show the URL.
 Never merge it.
 
