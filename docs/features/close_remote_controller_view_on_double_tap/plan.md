@@ -54,8 +54,8 @@ iPhone app shell only. No wire, pairing or BLE change and no new `Command`, so `
 - [x] `swift test` passes
 - [x] Both app targets build
 - [x] Tester findings resolved with the developer
-- [ ] Last QA round: every acceptance criterion passes on device, no open issues
-- [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
+- [x] Last QA round: every acceptance criterion passes on device, no open issues
+- [x] Marketer has reviewed the promo GIFs for this feature (skipped: marketing out of scope per Scope)
 
 ## QA log
 
