@@ -6,16 +6,18 @@ struct DPadOverlay: View {
     @Binding var isPresented: Bool
 
     @State private var isShown = false
+    @State private var armed = false
+    @State private var armTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
-            // Touch-down, like the typing scrim, so a stray touch only closes the pad.
+            // Tap on lift; the first tap only arms for 1s so a stray touch can't close the pad.
             Rectangle()
                 .fill(.ultraThinMaterial)
                 .overlay(Color.black.opacity(0.6))
                 .ignoresSafeArea()
                 .contentShape(.rect)
-                .gesture(DragGesture(minimumDistance: 0).onChanged { _ in close() })
+                .onTapGesture(perform: backdropTapped)
                 .accessibilityHidden(true)
 
             HStack(alignment: .top, spacing: 6) {
@@ -60,6 +62,20 @@ struct DPadOverlay: View {
             .padding(.bottom, 40)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .ignoresSafeArea()
+
+            Text("Tap again to close")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.regularMaterial, in: Capsule())
+                .opacity(armed ? 1 : 0)
+                .animation(.easeOut(duration: 0.2), value: armed)
+                .padding(.bottom, 40 + 44 + 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
         // The backdrop is dark in both appearances, so the pad always uses dark colors.
         .environment(\.colorScheme, .dark)
@@ -67,6 +83,17 @@ struct DPadOverlay: View {
         .accessibilityAction(.escape, close)
         .onAppear {
             withAnimation(.easeOut(duration: 0.2)) { isShown = true }
+        }
+        .onDisappear { armTask?.cancel() }
+    }
+
+    private func backdropTapped() {
+        if armed { return close() }
+        armed = true
+        armTask?.cancel()
+        armTask = Task {
+            try? await Task.sleep(for: .seconds(1))
+            if !Task.isCancelled { armed = false }
         }
     }
 
