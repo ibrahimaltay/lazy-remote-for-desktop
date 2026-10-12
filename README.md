@@ -12,69 +12,40 @@ Use your iPhone as a remote for your Mac, over Bluetooth.
 
 ### Trackpad
 
-Move the cursor with one finger.
+Move the cursor with one finger. Tap to click (double- and triple-tap work too), and two-finger double-tap to right-click.
 
-![Moving the Mac cursor with one finger on the iPhone](readme-gifs/trackpad-move.gif)
+![Moving the Mac cursor from the iPhone, clicking a movie and opening its right-click menu](readme-gifs/trackpad-basics.gif)
 
-Tap to click. Double-tap and triple-tap work too.
+Scroll with two fingers and the page glides on. Long-press, then move, to drag. Swipe with three fingers to switch desktops, open Mission Control or show all windows of an app.
 
-![Tapping the iPhone trackpad to click on the Mac](readme-gifs/tap-click.gif)
-
-Two-finger double-tap to right-click.
-
-![Two-finger double-tap on the iPhone opening a right-click menu on the Mac](readme-gifs/right-click.gif)
-
-Two-finger scroll, with smooth momentum.
-
-![Scrolling a Mac window with two fingers on the iPhone](readme-gifs/scroll.gif)
-
-Long-press, then move, to drag.
-
-![Dragging an item on the Mac with a long-press on the iPhone](readme-gifs/drag.gif)
-
-Swipe with three fingers to switch desktops, open Mission Control or show all windows of an app.
-
-![Three-finger swipe on the iPhone switching Mac desktops](readme-gifs/three-finger-swipe.gif)
+![Scrolling a web page, dragging a folder and switching desktops from the iPhone](readme-gifs/trackpad-gestures.gif)
 
 ### Floating Remote
 
-A floating remote button you can place anywhere on the screen, or dock in the top bar.
+A remote button you can place anywhere on the screen, or dock in the top bar. Tap it for a big D-pad: arrow keys for slides, menus and videos (hold one to repeat it), Space in the center, play/pause and track buttons, plus brightness and volume.
 
-![Moving and docking the floating remote button on the iPhone](readme-gifs/floating-remote.gif)
-
-Tap it for a big circular D-pad. Use the arrow keys to move through slides, menus and videos. Hold one to repeat it.
-
-![Using the iPhone D-pad arrow keys to navigate on the Mac](readme-gifs/dpad-arrows.gif)
-
-Play/Pause in the center.
-
-![Pausing and resuming Mac playback from the iPhone D-pad](readme-gifs/play-pause.gif)
+![Opening the D-pad on the iPhone to skip through a Mac video and pause it](readme-gifs/floating-remote.gif)
 
 ### Keyboard
 
-Type on your iPhone and send the text straight to your Mac.
+Type on your iPhone and send the text straight to your Mac, in any language, emoji included. Hold Backspace to delete quickly, and tap Enter for a new line.
 
-![Sending text from the iPhone keyboard to the Mac](readme-gifs/keyboard.gif)
-
-Works in any language, emoji included.
-
-![Sending text in several languages and emoji to the Mac](readme-gifs/any-language.gif)
-
-Backspace and Enter buttons. Hold Backspace to delete quickly.
-
-![Using the Backspace and Enter buttons on the iPhone](readme-gifs/backspace-enter.gif)
+![Sending a mixed-language message with an emoji to Mac Notes, then deleting and pressing Enter](readme-gifs/keyboard.gif)
 
 ### Spotlight
 
 Tap the magnifier to open Spotlight on your Mac, then type your search from the iPhone.
 
-![Opening Spotlight on the Mac and searching from the iPhone](readme-gifs/spotlight.gif)
+![Opening Spotlight on the Mac from the iPhone, searching for Safari and opening it](readme-gifs/spotlight.gif)
 
 ## Features
 
 - **Arrow keys & play/pause:** control videos and presentations without leaving your seat.
+- **Floating remote:** a button you can place anywhere on the screen or dock in the top bar; tap it for the D-pad.
 - **Trackpad:** move the cursor; tap to click, two-finger double-tap to right-click.
+- **Gestures:** two-finger scroll with momentum, long-press to drag, and three-finger swipe for desktops and Mission Control.
 - **Keyboard:** type on your iPhone and send the text straight to your Mac.
+- **Any language and emoji:** send text in any script, emoji included.
 - **Spotlight:** opens Spotlight on your Mac by sending ⌘ Space, then type your search from the iPhone. A custom Spotlight shortcut isn't supported.
 - **Direct and encrypted:** connects over Bluetooth, with no Wi-Fi setup or accounts.
 - **Free:** no ads, no tracking, no in-app purchases.
