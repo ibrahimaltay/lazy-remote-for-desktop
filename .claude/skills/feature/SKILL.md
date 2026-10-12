@@ -9,6 +9,14 @@ orchestrator: subagents cannot call each other or ask the user questions, so you
 relay between them and the user. Never let an agent skip its own rules (see
 .claude/agents/*.md and AGENTS.md).
 
+## 0. Branch
+
+Before anything else, make sure you are on `feature/<name>`, where `<name>` is
+$ARGUMENTS with underscores turned into hyphens. If that branch exists, `git switch`
+to it; otherwise `git switch -c` it from the current branch (normally main).
+Uncommitted changes come along; never commit, stash or discard them. Tell the
+user which branch you are on. Never build on main.
+
 ## 1. Find where we are
 
 Read docs/features/$ARGUMENTS/plan.md (and git status, `git log` for the branch).

@@ -3,7 +3,6 @@ import SwiftUI
 struct TextInputBar: View {
     let model: RemoteViewModel
     @FocusState.Binding var isFocused: Bool
-    var isSpotlight = false
 
     @State private var draft = ""
     @State private var repeatTask: Task<Void, Never>?
@@ -55,9 +54,7 @@ struct TextInputBar: View {
     }
 
     private var prompt: Text {
-        isSpotlight
-            ? Text("\(Image(systemName: "magnifyingglass")) Spotlight Search")
-            : Text("Type to send…")
+        Text("Type to send…")
     }
 
     private func send() {
