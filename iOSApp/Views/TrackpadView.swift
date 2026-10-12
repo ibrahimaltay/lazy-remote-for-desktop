@@ -10,16 +10,6 @@ struct TrackpadView: View {
         TrackpadSurface(model: model)
             .background(Color(.systemGray5))
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            .overlay(alignment: .bottom) {
-                // The right-click gesture is deliberately not the Mac's, so say so.
-                Text("Tap to click · Two fingers to scroll · Two-finger double-tap to right-click")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                    .allowsHitTesting(false)
-            }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .opacity(model.isConnected ? 1 : 0.35)
             .animation(.easeOut(duration: 0.2), value: model.isConnected)
@@ -56,7 +46,6 @@ private struct TrackpadSurface: UIViewRepresentable {
 
         let rightClick = UITapGestureRecognizer(target: coordinator, action: #selector(Coordinator.rightClick))
         rightClick.numberOfTouchesRequired = 2
-        rightClick.numberOfTapsRequired = 2
         view.addGestureRecognizer(rightClick)
 
         return view

@@ -12,7 +12,7 @@ Use your iPhone as a remote for your Mac, over Bluetooth.
 
 ### Trackpad
 
-Move the cursor with one finger. Tap to click (double- and triple-tap work too), and two-finger double-tap to right-click.
+Move the cursor with one finger. Tap to click (double- and triple-tap work too), and two-finger tap to right-click.
 
 ![Moving the Mac cursor from the iPhone, clicking a movie and opening its right-click menu](readme-gifs/trackpad-basics.gif)
 
@@ -42,7 +42,7 @@ Tap the magnifier, type your search, and press go to open the top result on your
 
 - **Arrow keys & play/pause:** control videos and presentations without leaving your seat.
 - **Floating remote:** a button you can place anywhere on the screen or dock in the top bar; tap it for the D-pad.
-- **Trackpad:** move the cursor; tap to click, two-finger double-tap to right-click.
+- **Trackpad:** move the cursor; tap to click, two-finger tap to right-click.
 - **Gestures:** two-finger scroll with momentum, long-press to drag, and three-finger swipe for desktops and Mission Control.
 - **Keyboard:** type on your iPhone and send the text straight to your Mac.
 - **Any language and emoji:** send text in any script, emoji included.

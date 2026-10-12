@@ -31,10 +31,10 @@ No wire, pairing or BLE change: pointer click frame `[2] + button + count` and `
 
 ## Steps
 
-- [ ] `TrackpadView.swift`: set the right-click `UITapGestureRecognizer` to one tap (drop `numberOfTapsRequired = 2`), keep two touches; remove the old comment
-- [ ] `TrackpadView.swift`: remove the hint text view/string
-- [ ] Update wording in README.md, site/index.html, marketing/marketing-plan.md
-- [ ] Both app targets build
+- [x] `TrackpadView.swift`: set the right-click `UITapGestureRecognizer` to one tap (drop `numberOfTapsRequired = 2`), keep two touches; remove the old comment
+- [x] `TrackpadView.swift`: remove the hint text view/string
+- [x] Update wording in README.md, site/index.html, marketing/marketing-plan.md
+- [x] Both app targets build
 
 ## Acceptance criteria
 
@@ -47,9 +47,9 @@ No wire, pairing or BLE change: pointer click frame `[2] + button + count` and `
 ## Done when
 
 - [ ] Acceptance criteria verified by tests
-- [ ] `swift test` passes
-- [ ] Both app targets build
-- [ ] Tester findings resolved with the developer
+- [x] `swift test` passes
+- [x] Both app targets build
+- [x] Tester findings resolved with the developer
 - [ ] Last QA round: every acceptance criterion passes on device, no open issues
 - [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
 
