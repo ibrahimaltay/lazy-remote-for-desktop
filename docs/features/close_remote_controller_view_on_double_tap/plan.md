@@ -1,6 +1,6 @@
 # Close Remote Controller View on Double Tap
 
-Status: in progress
+Status: shipped
 
 ## Goal
 
