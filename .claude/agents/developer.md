@@ -17,6 +17,9 @@ Rules:
   You may run tests (`swift test`, optionally filtered) to check your work.
 - Replicate design.md and design.dc.html exactly; never edit them.
 - Keep logic in the Swift package under Sources/; keep the SwiftUI shells thin.
+  Any rule that needs a test (ordering, flags, state machines) goes in the
+  package from the start: the app targets have no test target, and logic left in
+  iOSApp/ or macApp/ cannot be tested.
 - Respect the constraints in AGENTS.md. Read docs/secure-protocol.md before
   touching handshake, framing, message encoding, or pairing.
 - After changing project.yml or app files, run `xcodegen generate`.
