@@ -33,10 +33,10 @@ iPhone app shell only. No wire, pairing or BLE change and no new `Command`, so `
 
 ## Steps
 
-- [ ] `DPadOverlay.swift`: replace the backdrop's touch-down `DragGesture` with a single tap-on-lift gesture; add an `armed` Bool and a cancellable 1s `Task` that clears it
-- [ ] First tap sets `armed` and shows the "Tap again to close" hint pill above the X button (existing caption/`.regularMaterial` capsule style, `allowsHitTesting(false)`, 0.2s fade); second tap while armed calls `close()`
-- [ ] Cancel the timer when the overlay closes; X button and VoiceOver escape keep closing immediately
-- [ ] Both app targets build
+- [x] `DPadOverlay.swift`: replace the backdrop's touch-down `DragGesture` with a single tap-on-lift gesture; add an `armed` Bool and a cancellable 1s `Task` that clears it
+- [x] First tap sets `armed` and shows the "Tap again to close" hint pill above the X button (existing caption/`.regularMaterial` capsule style, `allowsHitTesting(false)`, 0.2s fade); second tap while armed calls `close()`
+- [x] Cancel the timer when the overlay closes; X button and VoiceOver escape keep closing immediately
+- [x] Both app targets build
 
 ## Acceptance criteria
 
@@ -51,9 +51,9 @@ iPhone app shell only. No wire, pairing or BLE change and no new `Command`, so `
 ## Done when
 
 - [ ] Acceptance criteria verified by tests
-- [ ] `swift test` passes
-- [ ] Both app targets build
-- [ ] Tester findings resolved with the developer
+- [x] `swift test` passes
+- [x] Both app targets build
+- [x] Tester findings resolved with the developer
 - [ ] Last QA round: every acceptance criterion passes on device, no open issues
 - [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
 
