@@ -11,7 +11,7 @@ live in the same part of the app into one promo.
 |---------|-------------|------------|
 | Move cursor | Trackpad | One finger drags; Mac cursor follows |
 | Tap / double / triple tap to click | Trackpad | Tap ripple on phone, click on Mac |
-| Two-finger double-tap right-click | Trackpad | Context menu opens on Mac |
+| Two-finger tap right-click | Trackpad | Context menu opens on Mac |
 | Two-finger scroll with momentum | Trackpad | Window scrolls and glides |
 | Long-press drag | Trackpad | Item picked up and moved |
 | Three-finger swipe (desktops, Mission Control, App windows) | Trackpad | Desktop switch / Mission Control |
@@ -64,7 +64,7 @@ dark appearance, default accent (systemBlue).
 
 | Screen / state | Swift source | What is on screen |
 |----------------|--------------|-------------------|
-| Idle | iOSApp/Views/RootView.swift, TrackpadView.swift, TextInputBar.swift, FloatingRemoteButton.swift | Header: green dot + Mac name (footnote, secondary), `magnifyingglass`, `ellipsis.circle` (32 pt buttons, accent). Trackpad: systemGray5, corner 28, full height, caption2 tertiary hint "Tap to click · Two fingers to scroll · Two-finger double-tap to right-click". Input bar: "Type to send…" field (systemGray5, corner 20) + 42 pt `delete.left` and `return` circles. Floating button: 58 pt material circle, `appletvremote.gen4` 28 pt, default spot right edge (inset 41) at 66% height |
+| Idle | iOSApp/Views/RootView.swift, TrackpadView.swift, TextInputBar.swift, FloatingRemoteButton.swift | Header: green dot + Mac name (footnote, secondary), `magnifyingglass`, `ellipsis.circle` (32 pt buttons, accent). Trackpad: systemGray5, corner 28, full height, no hint text. Input bar: "Type to send…" field (systemGray5, corner 20) + 42 pt `delete.left` and `return` circles. Floating button: 58 pt material circle, `appletvremote.gen4` 28 pt, default spot right edge (inset 41) at 66% height |
 | Docked button | FloatingRemoteButton.swift, RootView.swift | 22 pt accent `appletvremote.gen4`, no background, left of the magnifier. While dragging: 36 pt dashed ring at the dock, accent with 18% fill when near |
 | Keyboard open | RootView.swift, TextInputBar.swift | Black 40% scrim over header + trackpad (trackpad is not resized; keyboard covers it). Input bar rides above the keyboard; 42 pt `arrow.up` send button appears (accent when there is text, systemGray4 otherwise). Floating button hidden. Sending closes the keyboard and clears the field |
 | Header magnifier | RootView.swift, SpotlightOverlay.swift (`Magnifier`) | Custom drawn magnifier (not the SF Symbol): 18 pt, ring centre 7.6/7.6 r 5.9 stroke 1.7, handle (12,12)-(16.3,16.3) stroke 1.9 round cap, `#0A84FF`; 50% opacity when disconnected |

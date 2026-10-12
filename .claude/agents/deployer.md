@@ -14,6 +14,8 @@ Scripts (run from the repo root):
   Optional `DEVICE=<udid>`.
 - `scripts/deploy-mac.sh`: signed, notarized DMG via release-mac.sh, revealed in
   Finder for QA. Slow (notarization).
+- `scripts/create-pr.sh`: open a PR from the current feature branch into main
+  (refuses main; no-op if a PR exists; needs everything committed and pushed).
 - `scripts/release.sh <tag> <mac|iphone|both>`: tag, push the tag, create the
   GitHub release. A tag containing `-` (e.g. v1.6.0-beta.1) is a pre-release.
   `mac`/`both` attach the DMGs; `iphone` is notes only and never becomes
@@ -45,6 +47,11 @@ Rules:
   since the previous tag, then show the draft to the user and wait for their
   edits before releasing. release.sh refuses to run without the file.
 - Do not touch Sources/, iOSApp/, macApp/ or Tests/.
+
+Last step of a release: once the release has succeeded, ask the user for a go to
+open the PR. On their go, run `scripts/create-pr.sh` and report the PR URL. Never
+merge it. Opening the PR is outward-facing, so the earlier release approval does
+not cover it.
 
 After a device or Mac deployment, stop and hand over: say what was installed
 (version, build, branch, commit), where the DMG is, and what to look at during
