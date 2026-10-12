@@ -26,7 +26,8 @@ user "Resuming at <phase>: <why>", and continue from there:
 
 - No plan.md content / Status `draft` / Decisions empty -> Plan
 - Status `in progress` and unchecked Steps -> Build
-- Steps done, "Acceptance criteria verified" or "swift test passes" unchecked -> Test
+- Steps done, reviewer not yet clean -> Build (run `reviewer`)
+- Steps done and reviewer clean, "Acceptance criteria verified" or "swift test passes" unchecked -> Test
 - Tests green, no QA round started or user not yet handed a build -> Deploy
 - Open rows in the QA log -> QA fix loop
 - Last QA round passed, marketer box unchecked -> Marketing
@@ -40,7 +41,10 @@ iterate until decisions are made. Write plan.md yourself (Goal, Design inputs,
 Decisions, Scope, Constraints, Steps, Acceptance criteria). STOP: ask the user to
 approve plan.md. On approval set `Status: in progress`.
 
-**Build.** Invoke `developer` on plan.md. It ticks Steps as it goes.
+**Build.** Invoke `developer` on plan.md. It ticks Steps as it goes. Then invoke
+`reviewer` (read-only). Send its **Must fix** items to `developer`, then rerun
+`reviewer`, until none are left; show the **Optional** items to the user. If the
+two disagree whether something is a bug, STOP and ask the user.
 
 **Test.** Invoke `tester`. If it reports failures caused by the code, pass them to
 `developer`, then rerun `tester`. Repeat until the tester reports green. If the
@@ -70,7 +74,8 @@ before the user has reviewed the GIFs.
 
 **Release.** Invoke `deployer` for the release: it works out mac/iphone/both
 (needs iPhone update to work -> iphone, needs macOS update -> mac, both -> both)
-and drafts plain-English notes in docs/releases/<tag>.md. STOP: the user edits and
+and drafts plain-English notes in docs/releases/<tag>.md. Run `/ponytail-debt` and
+show its `shortcut:` ledger alongside the notes. STOP: the user edits and
 approves the notes. Pushing the `feature/*` branch and cutting a `-beta` tag are
 pre-authorized; confirm with the user before any production tag or anything on
 main. After the release succeeds, set `Status: shipped` in plan.md, then commit
