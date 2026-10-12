@@ -7,12 +7,14 @@ iOS dark-mode system colors. The Mac side is not defined by the app's code: it f
 the look of the original 13 GIFs (silver MacBook, purple wallpaper, dark app windows).
 SF Symbols are the real glyphs, rendered by marketing/sfsymbol.swift.
 """
+import hashlib
 import math
 import os
 import subprocess
+import sys
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 import manimgx as m
 
@@ -179,14 +181,25 @@ FLOAT_HOME = (PH_W - 41, SAFE_TOP + 0.66 * (PH_H - SAFE_TOP - SAFE_BOTTOM))  # d
 
 
 def header(phone, name="MacBook Air"):
-    """RootView.header: StatusLabel (green dot + name, footnote secondary), magnifyingglass, ellipsis.circle."""
+    """RootView.header: StatusLabel (green dot + name, footnote secondary), Spotlight magnifier, ellipsis.circle."""
     dot = circle(8 * S, GREEN, at=phone.pt(24, HEADER_Y))
     label = T(name, 13, SECONDARY)
     label.move_to(phone.pt(36, HEADER_Y), aligned_edge=m.LEFT)   # HStack(spacing: 8) after the 8 pt dot
-    g = m.Group(dot, label, symbol("magnifyingglass", 17, ACCENT, at=phone.pt(MAGNIFIER_X, HEADER_Y)),
+    g = m.Group(dot, label, magnifier(phone.pt(MAGNIFIER_X, HEADER_Y), 18, 1.7, 1.9, ACCENT),
                 symbol("ellipsis.circle", 17, ACCENT, at=phone.pt(ELLIPSIS_X, HEADER_Y)))
     g.magnifier = phone.pt(MAGNIFIER_X, HEADER_Y)
     return g
+
+
+def magnifier(at, size, ring, handle, color, opacity=1.0, scale=S):
+    """SpotlightOverlay.swift `Magnifier`: ring (7.6, 7.6) r 5.9 + round-cap handle (12, 12)-(16.3, 16.3) in an 18-unit box."""
+    u = size / 18 * scale
+    c = P(*at[:2]) + P(-9 * u, 9 * u)            # box top-left
+    ring_m = m.Circle(radius=5.9 * u, stroke_color=color, stroke_width=ring * u * 100, stroke_opacity=opacity,
+                      fill_opacity=0).move_to(c + P(7.6 * u, -7.6 * u))
+    line = m.Line(c + P(12 * u, -12 * u), c + P(16.3 * u, -16.3 * u), stroke_color=color,
+                  stroke_width=handle * u * 100, stroke_opacity=opacity).set_cap_style(m.CapStyleType.ROUND)
+    return m.VGroup(ring_m, line)
 
 
 def trackpad(phone):
@@ -202,7 +215,7 @@ def trackpad(phone):
     return g
 
 
-def input_bar(phone, focused=False, bottom=IDLE_BAR_BOTTOM, spotlight=False, text="", can_send=False):
+def input_bar(phone, focused=False, bottom=IDLE_BAR_BOTTOM, text="", can_send=False):
     """TextInputBar: systemGray5 field (corner 20), 42 pt delete.left / return circles, arrow.up send when focused."""
     y = bottom - INPUT_H / 2
     right = PH_W - 20
@@ -215,9 +228,6 @@ def input_bar(phone, focused=False, bottom=IDLE_BAR_BOTTOM, spotlight=False, tex
     g.field_left = phone.pt(36, y)
     if text:
         g.add(T(text, 17).move_to(g.field_left, aligned_edge=m.LEFT))
-    elif spotlight:
-        mg = symbol("magnifyingglass", 15, TERTIARY, at=phone.pt(44, y))
-        g.add(mg, T("Spotlight Search", 17, TERTIARY).move_to(phone.pt(55, y), aligned_edge=m.LEFT))
     else:
         g.add(T("Type to send…", 17, TERTIARY).move_to(g.field_left, aligned_edge=m.LEFT))
     g.backspace = circle(42 * S, GRAY5, at=phone.pt(back_x, y))
@@ -249,10 +259,12 @@ def scrim(phone):
     return phone.rect(0, SAFE_TOP, PH_W, PH_H - SAFE_BOTTOM, 0, "#000000", 0.4)
 
 
-def keyboard(phone):
-    """iOS system keyboard, dark (not app code; approximated)."""
+def keyboard(phone, return_label="return"):
+    """iOS system keyboard, dark (not app code; approximated). Keys by character in `.keys` (plus "return").
+    A "go" return key is drawn blue, as iOS does for .submitLabel(.go)."""
     top = PH_H - KB_H
     g = m.Group(phone.rect(0, top, PH_W, PH_H - 60, 0, "#2B2B2D"), phone.rect(0, PH_H - 120, PH_W, PH_H, 56, "#2B2B2D"))
+    g.keys = {}
     rows = ("qwertyuiop", "asdfghjkl", "zxcvbnm")
     kw, kh, pitch = 33.5, 42, 54
     for i, row in enumerate(rows):
@@ -260,16 +272,18 @@ def keyboard(phone):
         x0 = PH_W / 2 - (len(row) - 1) * (kw + 5.6) / 2
         for j, ch in enumerate(row):
             x = x0 + j * (kw + 5.6)
-            g.add(phone.rect(x - kw / 2, y - kh / 2, x + kw / 2, y + kh / 2, 5, "#6B6B6E"),
-                  T(ch, 16).move_to(phone.pt(x, y + 1)))
+            g.keys[ch] = phone.rect(x - kw / 2, y - kh / 2, x + kw / 2, y + kh / 2, 5, "#6B6B6E")
+            g.add(g.keys[ch], T(ch, 16).move_to(phone.pt(x, y + 1)))
     y = top + 8 + kh / 2 + 2 * pitch
     for x, sym in ((24, "shift"), (PH_W - 24, "delete.left")):
         g.add(phone.rect(x - 21, y - kh / 2, x + 21, y + kh / 2, 5, "#464649"), symbol(sym, 17, WHITE, at=phone.pt(x, y)))
     y += pitch
     g.add(phone.rect(3, y - kh / 2, 90, y + kh / 2, 5, "#464649"), T("123", 15).move_to(phone.pt(47, y)),
           phone.rect(96, y - kh / 2, 297, y + kh / 2, 5, "#6B6B6E"), T("space", 15).move_to(phone.pt(196, y)),
-          phone.rect(303, y - kh / 2, PH_W - 3, y + kh / 2, 5, "#464649"), T("return", 15).move_to(phone.pt(347, y)),
+          (ret := phone.rect(303, y - kh / 2, PH_W - 3, y + kh / 2, 5, ACCENT if return_label == "go" else "#464649")),
+          T(return_label, 15).move_to(phone.pt(347, y)),
           symbol("globe", 22, WHITE, at=phone.pt(36, PH_H - 52)), symbol("mic", 22, WHITE, at=phone.pt(PH_W - 36, PH_H - 52)))
+    g.keys["return"] = ret
     return g
 
 
@@ -705,12 +719,12 @@ def remote_screen(phone, docked=False):
     return g
 
 
-def open_keyboard(scene, phone, screen, spotlight=False, run_time=0.3):
+def open_keyboard(scene, phone, screen, run_time=0.3):
     """Focus the TextInputBar: scrim fades in, bar rises with the keyboard, send button appears, remote button hides.
     Returns (keyboard, focused bar)."""
     kb = keyboard(phone)
     bottom = PH_H - KB_H
-    bar = input_bar(phone, True, bottom, spotlight=spotlight)
+    bar = input_bar(phone, True, bottom)
     kb.shift(P(0, -KB_H * S))
     bar.shift(P(0, (bottom - IDLE_BAR_BOTTOM) * S))          # starts where the idle bar is
     sc = scrim(phone).set_opacity(0)
@@ -731,3 +745,85 @@ def close_keyboard(scene, phone, screen, kb, bar, run_time=0.3):
                run_time=run_time, rate_func=m.ease_in_out_cubic)
     scene.remove(kb, bar, kb.scrim)
     scene.add(screen.button)
+
+
+# ---------------------------------------------------------------- Spotlight overlay (iOSApp/Views/SpotlightOverlay.swift)
+
+PILL = (14, 70, PH_W - 14, 126)            # design.md: top 70, insets 14, height 56
+PILL_TEXT_X = 14 + 20 + 22 + 12            # padding 20, 22 pt icon, 12 gap
+SPOT_GRAY = "#EBEBF5"
+
+
+def _png(px, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    Image.fromarray(px).save(path)
+
+
+def blurred_screen(phone, radius=14):
+    """RootView with Spotlight open: header, trackpad and input bar under .blur(radius: 14), floating button hidden.
+    ManimGX has no blur, so that screen is rendered once by a tiny scene, Gaussian-blurred with PIL and cached
+    (keyed on this file). Black is made transparent so the status bar stays visible through the bleed."""
+    out = os.path.join(ROOT, ".build", "marketing")
+    key = hashlib.sha1(open(__file__, "rb").read()).hexdigest()[:10]
+    path = os.path.join(out, f"blurred-screen-{key}-{radius}.png")
+    if not os.path.exists(path):
+        os.makedirs(out, exist_ok=True)
+        src, mp4, frame = (os.path.join(out, n) for n in ("snap_scene.py", "snap.mp4", "snap.png"))
+        with open(src, "w") as f:
+            f.write(f"import sys\nsys.path.insert(0, {HERE!r})\nfrom common import *\n\n\n"
+                    "class Snap(m.Scene):\n    def construct(self):\n        self.camera.background_color = '#000000'\n"
+                    "        s = remote_screen(PhoneFrame())\n        self.add(s.header, s.pad, s.bar)\n        self.wait(1)\n")
+        mg = os.path.join(os.path.dirname(sys.executable), "manimgx")
+        subprocess.run([mg, "render", src, "Snap", "-r", "1920x1080", "--fps", "1", "-o", mp4], check=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", mp4, "-frames:v", "1", frame], check=True)
+        k = 1080 / 8                                                   # px per scene unit at 1080p
+        x0, y0 = phone.pt(0, 0)[:2]
+        box = (round(960 + x0 * k), round(540 - y0 * k), round(960 + (x0 + PH_W * S) * k), round(540 - (y0 - PH_H * S) * k))
+        img = Image.open(frame).convert("RGB").filter(ImageFilter.GaussianBlur(radius * S * k)).crop(box)
+        rgb = np.asarray(img).astype(float)
+        a = rgb.max(axis=2, keepdims=True)                             # un-premultiply over black
+        px = np.concatenate([np.where(a > 0, rgb * 255 / np.maximum(a, 1), 0), a], axis=2)
+        _png(np.clip(px, 0, 255).astype(np.uint8), path)
+    img = m.ImageMobject(path)
+    return img.stretch_to_fit_width(PH_W * S).stretch_to_fit_height(PH_H * S).move_to(P(*PH_C))
+
+
+def spotlight_scrim(phone):
+    """SpotlightOverlay scrim: black 45%, full screen (the status bar stays on top, as iOS draws it)."""
+    return phone.rect(0, 0, PH_W, PH_H, 0, "#000000", 0.45)
+
+
+def _pill_shadow(phone):
+    """Pill shadow: y 10, blur 30, black 40% (`.shadow(radius: 15, y: 10)`), as a blurred PNG."""
+    path = os.path.join(ROOT, ".build", "marketing", "spotlight-pill-shadow.png")
+    x0, y0, x1, y1 = PILL
+    pad, k = 60, 4                                                     # pt margin, px per pt
+    if not os.path.exists(path):
+        im = Image.new("L", ((x1 - x0 + 2 * pad) * k, (y1 - y0 + 2 * pad) * k), 0)
+        ImageDraw.Draw(im).rounded_rectangle((pad * k, pad * k, (x1 - x0 + pad) * k, (y1 - y0 + pad) * k), 28 * k, fill=255)
+        a = np.asarray(im.filter(ImageFilter.GaussianBlur(15 * k))).astype(float) * 0.4
+        px = np.zeros(a.shape + (4,), np.uint8)
+        px[..., 3] = a.astype(np.uint8)
+        _png(px, path)
+    img = m.ImageMobject(path)
+    img.stretch_to_fit_width((x1 - x0 + 2 * pad) * S).stretch_to_fit_height((y1 - y0 + 2 * pad) * S)
+    return img.move_to(phone.pt((x0 + x1) / 2, (y0 + y1) / 2 + 10))
+
+
+def spotlight_pill(phone, text=""):
+    """SpotlightOverlay pill: capsule #4A4644 82% (the .ultraThinMaterial under it is not drawn), 0.5 pt white 18%
+    border, shadow; 22 pt magnifier #EBEBF5 60%; 22 pt white text or the "Spotlight Search" placeholder at 55%."""
+    x0, y0, x1, y1 = PILL
+    y = (y0 + y1) / 2
+    g = m.Group(_pill_shadow(phone),
+                phone.rect(x0, y0, x1, y1, 28, "#4A4644", 0.82, stroke=WHITE, stroke_width=0.5 * S * 100, stroke_opacity=0.18),
+                magnifier(phone.pt(x0 + 20 + 11, y), 22, 1.6, 1.8, SPOT_GRAY, 0.6))
+    left = phone.pt(PILL_TEXT_X, y)
+    if text:
+        t = T(text, 22).move_to(left, aligned_edge=m.LEFT)
+        g.add(t)
+        left = t.get_right() + P(0.03, 0)
+    else:
+        g.add(T("Spotlight Search", 22, SPOT_GRAY).set_opacity(0.55).move_to(left, aligned_edge=m.LEFT))
+    g.add(m.Rectangle(width=2 * S, height=26 * S, fill_color=WHITE, fill_opacity=1, stroke_width=0).move_to(left))
+    return g

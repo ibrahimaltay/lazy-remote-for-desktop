@@ -19,6 +19,9 @@ final class RemoteViewModel {
     private let tuning = TrackpadTuning.bundled
     private let haptics = UIImpactFeedbackGenerator(style: .rigid)
     private var textStatusReset: Task<Void, Never>?
+    @ObservationIgnored private lazy var spotlight = SpotlightSubmitter(
+        send: { [unowned self] in self.send(text: $0) },
+        pressEnter: { [unowned self] in self.tap(.enter, feedback: false) })
 
     var isConnected: Bool {
         if case .connected = status { return true }
@@ -46,13 +49,16 @@ final class RemoteViewModel {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 self.status = status
+                if !self.isConnected { self.spotlight.reset() }
                 UIApplication.shared.isIdleTimerDisabled = self.isConnected
             }
         }
         client.onTextDelivered = { [weak self] delivered in
             // RemoteClient always reports on the main queue.
             MainActor.assumeIsolated {
-                self?.show(delivered ? .sent : .failed)
+                guard let self else { return }
+                self.show(delivered ? .sent : .failed)
+                self.spotlight.textDelivered(delivered)
             }
         }
         haptics.prepare()
@@ -149,13 +155,20 @@ final class RemoteViewModel {
         client.press(.left, isDown: false)
     }
 
-    func send(text: String) {
-        guard textStatus != .sending else { return }
+    @discardableResult
+    func send(text: String) -> Bool {
+        guard textStatus != .sending else { return false }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isConnected, !trimmed.isEmpty else { return }
+        guard isConnected, !trimmed.isEmpty else { return false }
         haptics.impactOccurred()
         show(.sending)
         client.send(text: trimmed)
+        return true
+    }
+
+    /// Types into the Mac's open Spotlight, then presses Enter once the text is confirmed.
+    func submitSpotlight(_ text: String) {
+        spotlight.submit(text)
     }
 
     private func show(_ status: TextStatus) {

@@ -5,7 +5,6 @@ struct RootView: View {
 
     @State private var confirmsForget = false
     @State private var inputBarHeight: CGFloat = 0
-    // shortcut: the phone can't see Spotlight, so this assumes it opens and closes with the keyboard.
     @State private var isSpotlight = false
     @FocusState private var isTyping: Bool
     @AppStorage("remoteFab.docked") private var isRemoteDocked = false
@@ -27,16 +26,17 @@ struct RootView: View {
                 if isTyping { scrim }
             }
             .animation(.easeOut(duration: 0.2), value: isTyping)
+            .blur(radius: isSpotlight ? 14 : 0)
             // The keyboard covers the controls instead of squeezing them.
             .ignoresSafeArea(.keyboard, edges: .bottom)
 
-            TextInputBar(model: model, isFocused: $isTyping, isSpotlight: isSpotlight)
+            TextInputBar(model: model, isFocused: $isTyping)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
                     inputBarHeight = $0
                 }
+                .blur(radius: isSpotlight ? 14 : 0)
 
-            // Spotlight always focuses the text field, so this hides it then too.
-            if !isTyping {
+            if !isTyping && !isSpotlight {
                 FloatingRemoteButton(
                     model: model, isDocked: $isRemoteDocked, dock: dockCenter,
                     headerBottom: headerBottom, inputBarHeight: inputBarHeight
@@ -50,18 +50,27 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        .onChange(of: isTyping) { _, typing in
-            guard !typing, isSpotlight else { return }
-            isSpotlight = false
-            // Sent text leaves Spotlight open on its results; otherwise Cmd+Space again closes it.
-            if model.textStatus != .sending { model.tap(.spotlight, feedback: false) }
+        .overlay {
+            if isSpotlight {
+                SpotlightOverlay(model: model, close: closeSpotlight)
+                    .ignoresSafeArea(.keyboard)
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeOut(duration: 0.2), value: isSpotlight)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .coordinateSpace(.named("root"))
         .background(Color(.systemBackground))
         // The controls reach the bottom edge, where a sideways drag would otherwise
         // flick iOS into another app mid-gesture.
         .defersSystemGestures(on: .bottom)
+    }
+
+    /// Sent text leaves the Mac's Spotlight open on its results; otherwise Cmd+Space again closes it.
+    private func closeSpotlight(closeMac: Bool) {
+        guard isSpotlight else { return }
+        isSpotlight = false
+        if closeMac && model.textStatus != .sending { model.tap(.spotlight, feedback: false) }
     }
 
     /// Fires on touch-down so a stray touch while typing only dismisses the
@@ -83,11 +92,12 @@ struct RootView: View {
             }
             Button {
                 model.tap(.spotlight)
+                isTyping = false
                 isSpotlight = true
-                isTyping = true
             } label: {
-                Image(systemName: "magnifyingglass")
+                Magnifier(size: 18, ringWidth: 1.7, handleWidth: 1.9, color: Color(red: 10 / 255, green: 132 / 255, blue: 1))
                     .frame(width: 32, height: 32)
+                    .opacity(model.isConnected ? 1 : 0.5)
             }
             .disabled(!model.isConnected)
             .accessibilityLabel("Spotlight Search")
