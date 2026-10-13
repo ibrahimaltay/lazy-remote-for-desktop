@@ -48,8 +48,8 @@ Client-side only; no wire change. Tuning lives in `Sources/RemoteClientCore/Reso
 - [x] `swift test` passes
 - [x] Both app targets build
 - [ ] Tester findings resolved with the developer
-- [ ] Last QA round: every acceptance criterion passes on device, no open issues
-- [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
+- [x] Last QA round: every acceptance criterion passes on device, no open issues
+- [x] Marketer has reviewed the promo GIFs for this feature (skipped: user decided no promo change for a behavior fix)
 
 ## QA log
 
