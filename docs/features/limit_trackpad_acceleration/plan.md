@@ -1,6 +1,6 @@
 # Limit trackpad acceleration
 
-Status: draft
+Status: in progress
 
 ## Goal
 
@@ -30,10 +30,10 @@ Client-side only; no wire change. Tuning lives in `Sources/RemoteClientCore/Reso
 
 - [ ] Reproduce: record fingerSpeed, gain and output pixels for a short fast swipe vs. a slow long one.
 - [x] Decide how to limit the coast: scale start velocity by finger travel (Decision 2).
-- [ ] Pass the gesture's total finger travel from `RemoteViewModel` into `ScrollMomentum`; add a tuning key for the full-coast travel distance.
-- [ ] Implement in `RemoteClientCore` (package), not the app shell; add keys to `TrackpadTuning.json` and update its `_help`.
-- [ ] Limit the coast in `ScrollMomentum` (`maxVelocity` is currently 8000 px/s, far too high for a short flick).
-- [ ] Tests in `TrackpadTuningTests` / scroll momentum tests.
+- [x] Pass the gesture's total finger travel from `RemoteViewModel` into `ScrollMomentum`; add a tuning key for the full-coast travel distance.
+- [x] Implement in `RemoteClientCore` (package), not the app shell; add keys to `TrackpadTuning.json` and update its `_help`.
+- [x] Limit the coast in `ScrollMomentum` (`maxVelocity` is currently 8000 px/s, far too high for a short flick).
+- [x] Tests in `TrackpadTuningTests` / scroll momentum tests.
 
 ## Acceptance criteria
 
@@ -44,9 +44,9 @@ Client-side only; no wire change. Tuning lives in `Sources/RemoteClientCore/Reso
 
 ## Done when
 
-- [ ] Acceptance criteria verified by tests
-- [ ] `swift test` passes
-- [ ] Both app targets build
+- [x] Acceptance criteria verified by tests
+- [x] `swift test` passes
+- [x] Both app targets build
 - [ ] Tester findings resolved with the developer
 - [ ] Last QA round: every acceptance criterion passes on device, no open issues
 - [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)

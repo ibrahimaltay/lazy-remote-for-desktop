@@ -20,6 +20,7 @@ public struct TrackpadTuning: Decodable, Sendable, Equatable {
         public var minStartVelocity: Double
         public var stopVelocity: Double
         public var maxVelocity: Double
+        public var fullCoastTravel: Double
     }
 
     public struct Scroll: Decodable, Sendable, Equatable {

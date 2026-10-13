@@ -112,10 +112,10 @@ final class RemoteViewModel {
     }
 
     /// Nil when the release was too slow to coast or momentum is turned off.
-    func momentum(afterReleaseAt velocity: CGPoint) -> ScrollMomentum? {
+    func momentum(afterReleaseAt velocity: CGPoint, fingerTravel: Double) -> ScrollMomentum? {
         guard isConnected else { return nil }
         let content = scrollContent(velocity, fingerVelocity: velocity)
-        return ScrollMomentum(velocityX: content.x, velocityY: content.y, tuning: tuning.scroll.momentum)
+        return ScrollMomentum(velocityX: content.x, velocityY: content.y, fingerTravel: fingerTravel, tuning: tuning.scroll.momentum)
     }
 
     /// Momentum deltas are already in Mac pixels, so no gain is applied.
