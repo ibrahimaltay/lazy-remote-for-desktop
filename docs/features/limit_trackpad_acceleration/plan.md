@@ -1,6 +1,6 @@
 # Limit trackpad acceleration
 
-Status: in progress
+Status: shipped
 
 ## Goal
 
