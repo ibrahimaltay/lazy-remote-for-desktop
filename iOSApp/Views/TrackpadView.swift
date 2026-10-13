@@ -78,6 +78,7 @@ private struct TrackpadSurface: UIViewRepresentable {
         private var swipeTravel = CGPoint.zero
         private var isDragging = false
         private var scrollVelocity = CGPoint.zero
+        private var scrollTravel = 0.0
         private var momentum: ScrollMomentum?
         private var displayLink: CADisplayLink?
 
@@ -109,6 +110,7 @@ private struct TrackpadSurface: UIViewRepresentable {
                     // The centroid jumps when a finger lands, so this frame's delta is dropped.
                     panMode = .scroll
                     scrollVelocity = .zero
+                    scrollTravel = 0
                     model.scroll(by: .zero, velocity: .zero, phase: .began)
                 case .cursor:
                     model.moveCursor(by: translation, velocity: velocity)
@@ -118,6 +120,7 @@ private struct TrackpadSurface: UIViewRepresentable {
                     endScroll(coasting: true)
                 case .scroll:
                     scrollVelocity = velocity
+                    scrollTravel += hypot(translation.x, translation.y)
                     model.scroll(by: translation, velocity: velocity, phase: .changed)
                 case .swipe:
                     swipeTravel.x += translation.x
@@ -177,7 +180,7 @@ private struct TrackpadSurface: UIViewRepresentable {
 
         private func endScroll(coasting: Bool) {
             model.scroll(by: .zero, velocity: .zero, phase: .ended)
-            guard coasting, let coast = model.momentum(afterReleaseAt: scrollVelocity) else { return }
+            guard coasting, let coast = model.momentum(afterReleaseAt: scrollVelocity, fingerTravel: scrollTravel) else { return }
             momentum = coast
             model.coast(dx: 0, dy: 0, phase: .momentumBegan)
             let link = CADisplayLink(target: self, selector: #selector(tick))
