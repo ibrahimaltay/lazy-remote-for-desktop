@@ -14,11 +14,12 @@ None. Behavior-only change, no UI.
 
 | # | Decision | Options considered | Choice | Why |
 |---|----------|--------------------|--------|-----|
+| 1 | Where the fly-away comes from | Gain while fingers are down; momentum coast after lift-off | Momentum coast | User tested: the page moves normally under the fingers and flies after lift-off. Gain is left alone. |
 
 ## Scope
 
-In: capping the gain/output for fast short swipes, for page scrolling only; new tuning keys in `TrackpadTuning.json` with decoding tests.
-Out (deliberately): cursor movement (confirmed unaffected); wire format changes; changing slow-finger precision; changing momentum decay (`velocityKeptPerSecond`).
+In: capping the momentum coast (start velocity and/or distance) after a fast short swipe, for page scrolling only; new tuning keys in `TrackpadTuning.json` with decoding tests.
+Out (deliberately): scroll gain while fingers are down; cursor movement (confirmed unaffected); wire format changes; changing slow-finger precision; changing momentum decay (`velocityKeptPerSecond`).
 
 ## Constraints
 
@@ -27,16 +28,16 @@ Client-side only; no wire change. Tuning lives in `Sources/RemoteClientCore/Reso
 ## Steps
 
 - [ ] Reproduce: record fingerSpeed, gain and output pixels for a short fast swipe vs. a slow long one.
-- [ ] Decide the cap (see Open questions) and record it in Decisions.
+- [ ] Decide how to limit the coast (see Open questions) and record it in Decisions.
 - [ ] Implement in `RemoteClientCore` (package), not the app shell; add keys to `TrackpadTuning.json` and update its `_help`.
-- [ ] Cap momentum start velocity too if it is the source of the fly-away (`ScrollMomentum`).
+- [ ] Limit the coast in `ScrollMomentum` (`maxVelocity` is currently 8000 px/s, far too high for a short flick).
 - [ ] Tests in `TrackpadTuningTests` / scroll momentum tests.
 
 ## Acceptance criteria
 
 - A short (few cm), very fast swipe scrolls a bounded distance, comparable to the Mac trackpad.
 - Slow, precise movement and long deliberate flicks still feel as they do today.
-- Output never exceeds the configured cap regardless of finger speed.
+- The coast after lift-off never exceeds the configured limit regardless of finger speed.
 - Tuning JSON decodes and the new keys are tested.
 
 ## Done when
@@ -59,5 +60,4 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 
 ## Open questions
 
-- Cap on per-event output, on gain, or on finger-speed input (scroll only)?
-- Does the fly-away come from the gain or from the momentum coast after lift-off?
+- How to limit the coast: lower `maxVelocity`, scale start velocity by how far the fingers travelled, or cap total coast distance?
