@@ -15,6 +15,7 @@ None. Behavior-only change, no UI.
 | # | Decision | Options considered | Choice | Why |
 |---|----------|--------------------|--------|-----|
 | 1 | Where the fly-away comes from | Gain while fingers are down; momentum coast after lift-off | Momentum coast | User tested: the page moves normally under the fingers and flies after lift-off. Gain is left alone. |
+| 2 | How to limit the coast | Lower `maxVelocity`; scale start velocity by finger travel; cap total coast distance | Scale start velocity by finger travel, keep `maxVelocity` as a backstop | User's choice. A short swipe gets a weaker coast than a long one at the same speed, like the Mac trackpad, without shortening long deliberate flicks. |
 
 ## Scope
 
@@ -28,7 +29,8 @@ Client-side only; no wire change. Tuning lives in `Sources/RemoteClientCore/Reso
 ## Steps
 
 - [ ] Reproduce: record fingerSpeed, gain and output pixels for a short fast swipe vs. a slow long one.
-- [ ] Decide how to limit the coast (see Open questions) and record it in Decisions.
+- [x] Decide how to limit the coast: scale start velocity by finger travel (Decision 2).
+- [ ] Pass the gesture's total finger travel from `RemoteViewModel` into `ScrollMomentum`; add a tuning key for the full-coast travel distance.
 - [ ] Implement in `RemoteClientCore` (package), not the app shell; add keys to `TrackpadTuning.json` and update its `_help`.
 - [ ] Limit the coast in `ScrollMomentum` (`maxVelocity` is currently 8000 px/s, far too high for a short flick).
 - [ ] Tests in `TrackpadTuningTests` / scroll momentum tests.
@@ -60,4 +62,4 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 
 ## Open questions
 
-- How to limit the coast: lower `maxVelocity`, scale start velocity by how far the fingers travelled, or cap total coast distance?
+- Exact scaling curve and the travel distance (points) at which a flick gets its full coast: linear ramp, or something gentler? Set the number during device QA.
