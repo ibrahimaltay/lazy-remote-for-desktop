@@ -17,8 +17,8 @@ None. Behavior-only change, no UI.
 
 ## Scope
 
-In: capping the gain/output for fast short swipes, for scroll (the observed case) and cursor if it shows the same problem; new tuning keys in `TrackpadTuning.json` with decoding tests.
-Out (deliberately): wire format changes; changing slow-finger precision; changing momentum decay (`velocityKeptPerSecond`).
+In: capping the gain/output for fast short swipes, for page scrolling only; new tuning keys in `TrackpadTuning.json` with decoding tests.
+Out (deliberately): cursor movement (confirmed unaffected); wire format changes; changing slow-finger precision; changing momentum decay (`velocityKeptPerSecond`).
 
 ## Constraints
 
@@ -59,5 +59,5 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 
 ## Open questions
 
-- Cap on per-event output, on gain, or on finger-speed input? Does the cursor need it too, or only scroll?
+- Cap on per-event output, on gain, or on finger-speed input (scroll only)?
 - Does the fly-away come from the gain or from the momentum coast after lift-off?
