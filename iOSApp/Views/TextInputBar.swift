@@ -17,11 +17,12 @@ struct TextInputBar: View {
             Button(action: model.sendText) {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(Color.white)
                     .frame(width: 42, height: 42)
-                    .background(Circle().fill(Color(.systemGray5)))
+                    .background(Circle().fill(Color(red: 10 / 255, green: 132 / 255, blue: 1)))
             }
             .accessibilityLabel("Send")
+            .opacity(model.isConnected ? 1 : 0.5)
             .disabled(!model.isConnected)
         }
         .animation(.easeOut(duration: 0.2), value: isFocused)
@@ -41,7 +42,7 @@ private struct LiveTextField: UIViewRepresentable {
         let field = BackspaceField()
         field.delegate = context.coordinator
         field.placeholder = "Type to send…"
-        field.returnKeyType = .send
+        field.returnKeyType = .default
         field.font = .preferredFont(forTextStyle: .body)
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.onEmptyBackspace = { [model] in model.emptyBackspace() }
