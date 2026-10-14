@@ -39,6 +39,19 @@ final class SecureInputDecoderTests: XCTestCase {
         XCTAssertThrowsError(try SecureInputDecoder.decode(invalid, session: &server, approved: true))
     }
 
+    func testSpotlightQueryAcceptedOnInputLaneOnly() throws {
+        var (client, server) = try sessions()
+        let query = SecureMessage.spotlightQuery("caf\u{e9}")
+        let valid = try client.seal(query.encoded(), lane: .clientInput)
+        XCTAssertEqual(try SecureInputDecoder.decode(valid, session: &server, approved: true), query)
+        let empty = try client.seal(SecureMessage.spotlightQuery("").encoded(), lane: .clientInput)
+        XCTAssertEqual(try SecureInputDecoder.decode(empty, session: &server, approved: true), .spotlightQuery(""))
+        let control = try client.seal(query.encoded(), lane: .clientControl)
+        XCTAssertThrowsError(try SecureInputDecoder.decode(control, session: &server, approved: true))
+        let oversized = try client.seal(Data([12]) + Data(repeating: 0x61, count: 257), lane: .clientInput)
+        XCTAssertThrowsError(try SecureInputDecoder.decode(oversized, session: &server, approved: true))
+    }
+
     func testControlMessagesCannotBecomeInput() throws {
         var (client, server) = try sessions()
         for control in [SecureMessage.approved, .pending, .revoked, .finish, .name("Phone"), .textResult(id: 1, success: true)] {

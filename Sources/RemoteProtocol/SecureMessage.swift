@@ -10,6 +10,12 @@ public enum SecureMessage: Sendable, Equatable {
     case revoked
     case textResult(id: UInt64, success: Bool)
     case finish
+    case spotlightResults(typed: String, titles: [String])
+    case spotlightWatch(Bool)
+    case spotlightQuery(String)
+
+    public static let maxSpotlightRows = 8
+    public static let maxSpotlightQueryBytes = 256
 
     public func encoded() throws -> Data {
         switch self {
@@ -27,6 +33,18 @@ public enum SecureMessage: Sendable, Equatable {
         case .textResult(let id, let success):
             return Data([8]) + Self.encodeID(id) + Data([success ? 1 : 0])
         case .finish: return Data([9])
+        case .spotlightResults(let typed, let titles):
+            guard titles.count <= Self.maxSpotlightRows else { throw SecureWireError.oversized }
+            return try ([typed] + titles).reduce(Data([10, UInt8(titles.count)])) {
+                let bytes = Data($1.utf8)
+                guard bytes.count <= Int(UInt16.max) else { throw SecureWireError.oversized }
+                return $0 + Data([UInt8(bytes.count >> 8), UInt8(bytes.count & 0xff)]) + bytes
+            }
+        case .spotlightWatch(let isOn): return Data([11, isOn ? 1 : 0])
+        case .spotlightQuery(let query):
+            // Unlike other strings, empty is valid: it clears the Mac's field.
+            guard query.utf8.count <= Self.maxSpotlightQueryBytes else { throw SecureWireError.oversized }
+            return Data([12]) + Data(query.utf8)
         }
     }
 
@@ -61,6 +79,27 @@ public enum SecureMessage: Sendable, Equatable {
         case 8:
             guard bytes.count == 10, bytes[9] <= 1 else { throw SecureWireError.malformed }
             self = .textResult(id: Self.decodeID(bytes[1..<9]), success: bytes[9] == 1)
+        case 10:
+            guard bytes.count >= 4, bytes[1] <= UInt8(Self.maxSpotlightRows) else { throw SecureWireError.malformed }
+            var offset = 2
+            var strings: [String] = []
+            for _ in 0...Int(bytes[1]) {
+                guard offset + 2 <= bytes.count else { throw SecureWireError.malformed }
+                let end = offset + 2 + (Int(bytes[offset]) << 8 | Int(bytes[offset + 1]))
+                guard end <= bytes.count, let value = String(bytes: bytes[(offset + 2)..<end], encoding: .utf8)
+                else { throw SecureWireError.malformed }
+                strings.append(value)
+                offset = end
+            }
+            guard offset == bytes.count else { throw SecureWireError.malformed }
+            self = .spotlightResults(typed: strings[0], titles: Array(strings.dropFirst()))
+        case 11:
+            guard bytes.count == 2, bytes[1] <= 1 else { throw SecureWireError.malformed }
+            self = .spotlightWatch(bytes[1] == 1)
+        case 12:
+            guard bytes.count <= 1 + Self.maxSpotlightQueryBytes else { throw SecureWireError.oversized }
+            guard let value = String(data: payload, encoding: .utf8) else { throw SecureWireError.malformed }
+            self = .spotlightQuery(value)
         default:
             throw SecureWireError.malformed
         }

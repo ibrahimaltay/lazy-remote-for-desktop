@@ -26,6 +26,9 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
     /// Called on the main queue after the encrypted injection result, or failure.
     public var onTextDelivered: ((Bool) -> Void)?
 
+    /// Called on the main queue with what the Mac's Spotlight shows, while watching.
+    public var onSpotlightResults: ((SpotlightResults) -> Void)?
+
     private enum Stage {
         case idle, connecting, services, characteristics, subscribing
         case serverHello, serverFinish, approval, ready, failed
@@ -38,11 +41,11 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
 
     private struct Job {
         let token: UUID
-        let payload: Payload
+        var payload: Payload
         let control: Bool
         let type: CBCharacteristicWriteType
-        let frameCount: Int
-        let byteCount: Int
+        var frameCount: Int
+        var byteCount: Int
     }
 
     private struct WriteRecord {
@@ -259,6 +262,41 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
         }
     }
 
+    /// Sets the Mac's Spotlight search field. Only the latest query matters, so a query
+    /// still queued is replaced in place (keeping its order among keys).
+    public func setSpotlightQuery(_ query: String) {
+        queue.async {
+            guard self.stage == .ready else { return }
+            do {
+                let payload = Payload.message(.spotlightQuery(query))
+                if let index = self.jobs.firstIndex(where: {
+                    if case .message(.spotlightQuery) = $0.payload { return true }
+                    return false
+                }) {
+                    let (frames, bytes) = try self.cost(payload, type: .withResponse)
+                    self.queuedFrames += frames - self.jobs[index].frameCount
+                    self.queuedBytes += bytes - self.jobs[index].byteCount
+                    self.jobs[index].payload = payload
+                    self.jobs[index].frameCount = frames
+                    self.jobs[index].byteCount = bytes
+                } else {
+                    self.enqueueInput(.spotlightQuery(query))
+                }
+            } catch { self.failSecurity(error) }
+        }
+    }
+
+    /// Ask the Mac to stream its Spotlight results. Send on only while the overlay is open.
+    public func setSpotlightWatch(_ isOn: Bool) {
+        queue.async {
+            guard self.stage == .ready else { return }
+            do {
+                try self.enqueue(.message(.spotlightWatch(isOn)), control: true, type: .withResponse)
+                self.pump()
+            } catch { self.failSecurity(error) }
+        }
+    }
+
     private func enqueueInput(_ message: SecureMessage) {
         guard stage == .ready else { return }
         do {
@@ -296,7 +334,7 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
         return id
     }
 
-    private func enqueue(_ payload: Payload, control: Bool, type: CBCharacteristicWriteType) throws {
+    private func cost(_ payload: Payload, type: CBCharacteristicWriteType) throws -> (frames: Int, bytes: Int) {
         guard let peripheral else { throw SecureError.wrongPhase }
         let size: Int
         switch payload {
@@ -306,7 +344,11 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
         let mtu = peripheral.maximumWriteValueLength(for: type)
         guard mtu >= 20 else { throw SecureWireError.malformed }
         let frames = (size + mtu - 17) / (mtu - 16)
-        let bytes = size + frames * 16
+        return (frames, size + frames * 16)
+    }
+
+    private func enqueue(_ payload: Payload, control: Bool, type: CBCharacteristicWriteType) throws {
+        let (frames, bytes) = try cost(payload, type: type)
         guard queuedFrames + frames <= Self.maximumFrames,
               queuedBytes + bytes <= Self.maximumBytes else { throw SecureWireError.oversized }
                 let token = UUID()
@@ -726,6 +768,10 @@ extension RemoteClient: CBPeripheralDelegate {
                 textTimer = UUID()
                 reportText(delivered: delivered)
             }
+        case .spotlightResults(let typed, let titles):
+            guard stage == .ready else { throw SecureError.wrongPhase }
+            let results = SpotlightResults(typed: typed, titles: titles)
+            DispatchQueue.main.async { self.onSpotlightResults?(results) }
         default: throw SecureError.malformedMessage
         }
     }

@@ -11,11 +11,23 @@ relay between them and the user. Never let an agent skip its own rules (see
 
 ## 0. Branch
 
-Before anything else, make sure you are on `feature/<name>`, where `<name>` is
-$ARGUMENTS with underscores turned into hyphens. If that branch exists, `git switch`
-to it; otherwise `git switch -c` it from the current branch (normally main).
+Before anything else, run `git fetch origin`. Local `main` is often behind
+`origin/main` because features merge in parallel; building on a stale base ships
+builds that silently lack other merged features. Then make sure you are on
+`feature/<name>`, where `<name>` is $ARGUMENTS with underscores turned into
+hyphens:
+
+- If that branch exists, `git switch` to it, then check `git log --oneline
+  HEAD..origin/main`. If `origin/main` has commits the branch lacks, tell the
+  user what is missing and ask before merging `origin/main` into the branch (a
+  merge, never a rebase or force-push). Rebuild and retest after any merge.
+- Otherwise `git switch -c` it from `origin/main` (not the current branch, and
+  not local `main`).
+
 Uncommitted changes come along; never commit, stash or discard them. Tell the
-user which branch you are on. Never build on main.
+user which branch you are on and which `origin/main` commit it is based on.
+Never build on main. Run the same `HEAD..origin/main` check again before Deploy
+and before Release, and tell the user if it is no longer empty.
 
 ## 1. Find where we are
 

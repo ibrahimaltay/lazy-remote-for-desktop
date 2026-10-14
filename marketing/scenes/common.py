@@ -54,9 +54,9 @@ def font_size(pt, scale=S):
     return pt * scale * 0.7 * 48 / 0.449
 
 
-def T(s, pt, color=WHITE, scale=S, bold=False, semibold=False):
-    w = m.BOLD if bold else (m.SEMIBOLD if semibold else m.NORMAL)
-    return m.Text(s, font=FONT, font_size=font_size(pt, scale), color=color, weight=w)
+def T(s, pt, color=WHITE, scale=S, bold=False, semibold=False, weight=None, t2w=None):
+    w = weight or (m.BOLD if bold else (m.SEMIBOLD if semibold else m.NORMAL))
+    return m.Text(s, font=FONT, font_size=font_size(pt, scale), color=color, weight=w, t2w=t2w)
 
 
 def emoji(ch, pt, scale=S):
@@ -203,14 +203,10 @@ def magnifier(at, size, ring, handle, color, opacity=1.0, scale=S):
 
 
 def trackpad(phone):
-    """TrackpadView: systemGray5 surface, corner 28, 20 pt side / 14 pt bottom padding, caption2 tertiary hint."""
+    """TrackpadView: systemGray5 surface, corner 28, 20 pt side / 14 pt bottom padding, no hint text (removed in ebb6f57)."""
     top, bottom = HEADER_BOTTOM, IDLE_BAR_BOTTOM - INPUT_H - 14
     pad = phone.rect(20, top, PH_W - 20, bottom, 28, GRAY5)
-    hint = T("Tap to click · Two fingers to scroll · Two-finger double-tap to right-click", 11, TERTIARY)
-    if hint.width > (PH_W - 72) * S:
-        hint.scale_to_fit_width((PH_W - 72) * S)
-    hint.move_to(phone.pt(PH_W / 2, bottom - 16 - 7))
-    g = m.VGroup(pad, hint)
+    g = m.VGroup(pad)
     g.center_pt = (PH_W / 2, (top + bottom) / 2)
     return g
 
@@ -793,14 +789,14 @@ def spotlight_scrim(phone):
     return phone.rect(0, 0, PH_W, PH_H, 0, "#000000", 0.45)
 
 
-def _pill_shadow(phone):
-    """Pill shadow: y 10, blur 30, black 40% (`.shadow(radius: 15, y: 10)`), as a blurred PNG."""
-    path = os.path.join(ROOT, ".build", "marketing", "spotlight-pill-shadow.png")
-    x0, y0, x1, y1 = PILL
+def _soft_shadow(phone, box, r):
+    """`.shadow(color: .black.opacity(0.4), radius: 15, y: 10)` under a rounded box (pill, results card), as a blurred PNG."""
+    x0, y0, x1, y1 = (round(v) for v in box)
+    path = os.path.join(ROOT, ".build", "marketing", f"spotlight-shadow-{x1 - x0}x{y1 - y0}-{r}.png")
     pad, k = 60, 4                                                     # pt margin, px per pt
     if not os.path.exists(path):
         im = Image.new("L", ((x1 - x0 + 2 * pad) * k, (y1 - y0 + 2 * pad) * k), 0)
-        ImageDraw.Draw(im).rounded_rectangle((pad * k, pad * k, (x1 - x0 + pad) * k, (y1 - y0 + pad) * k), 28 * k, fill=255)
+        ImageDraw.Draw(im).rounded_rectangle((pad * k, pad * k, (x1 - x0 + pad) * k, (y1 - y0 + pad) * k), r * k, fill=255)
         a = np.asarray(im.filter(ImageFilter.GaussianBlur(15 * k))).astype(float) * 0.4
         px = np.zeros(a.shape + (4,), np.uint8)
         px[..., 3] = a.astype(np.uint8)
@@ -815,7 +811,7 @@ def spotlight_pill(phone, text=""):
     border, shadow; 22 pt magnifier #EBEBF5 60%; 22 pt white text or the "Spotlight Search" placeholder at 55%."""
     x0, y0, x1, y1 = PILL
     y = (y0 + y1) / 2
-    g = m.Group(_pill_shadow(phone),
+    g = m.Group(_soft_shadow(phone, PILL, 28),
                 phone.rect(x0, y0, x1, y1, 28, "#4A4644", 0.82, stroke=WHITE, stroke_width=0.5 * S * 100, stroke_opacity=0.18),
                 magnifier(phone.pt(x0 + 20 + 11, y), 22, 1.6, 1.8, SPOT_GRAY, 0.6))
     left = phone.pt(PILL_TEXT_X, y)
@@ -826,4 +822,69 @@ def spotlight_pill(phone, text=""):
     else:
         g.add(T("Spotlight Search", 22, SPOT_GRAY).set_opacity(0.55).move_to(left, aligned_edge=m.LEFT))
     g.add(m.Rectangle(width=2 * S, height=26 * S, fill_color=WHITE, fill_opacity=1, stroke_width=0).move_to(left))
+    return g
+
+
+def match_ranges(title, typed):
+    """SpotlightResults.matchedRanges (Sources/RemoteClientCore/SpotlightResults.swift): (start, end) of the
+    typed text at the start of each word, words split on space . _ -, case-insensitive."""
+    q, out, i = typed.lower(), [], 0
+    while q and i < len(title):
+        if title[i] in " ._-":
+            i += 1
+            continue
+        end = next((j for j in range(i, len(title)) if title[j] in " ._-"), len(title))
+        if title[i:end].lower().startswith(q):
+            out.append((i, min(i + len(q), end)))
+        i = end
+    return out
+
+
+assert match_ranges("Raspberry Pi Imager.app", "p") == [(10, 11)] and match_ranges("Pages.app", "ph") == []
+
+
+def _icon_tile(clip=36):
+    """ResultRow generic icon: 36 pt, corner 9, gradient #8E8E93 -> #636366, 0.5 pt white 22% border; top `clip` pt."""
+    path = os.path.join(ROOT, ".build", "marketing", "spotlight-icon-tile.png")
+    k = 8                                                              # px per pt
+    if not os.path.exists(path):
+        t = np.linspace(0, 1, 36 * k)[:, None, None]
+        px = np.repeat((1 - t) * np.array([142, 142, 147]) + t * np.array([99, 99, 102]), 36 * k, axis=1)
+        mask = Image.new("L", (36 * k, 36 * k), 0)
+        ImageDraw.Draw(mask).rounded_rectangle((0, 0, 36 * k - 1, 36 * k - 1), 9 * k, fill=255)
+        im = Image.fromarray(px.astype(np.uint8)).convert("RGBA")
+        im.putalpha(mask)
+        ring = Image.new("RGBA", im.size, (0, 0, 0, 0))
+        ImageDraw.Draw(ring).rounded_rectangle((0, 0, 36 * k - 1, 36 * k - 1), 9 * k, outline=(255, 255, 255, 56), width=k // 2)
+        _png(np.asarray(Image.alpha_composite(im, ring)), path)
+    px = np.asarray(Image.open(path))[: round(clip * k)]
+    return m.ImageMobject(px).stretch_to_fit_width(36 * S).stretch_to_fit_height(clip * S)
+
+
+def spotlight_results(phone, typed, titles):
+    """SpotlightOverlay.swift ResultsCard / ResultRow: card 10 below the pill, insets 14, corner 22, #3A3837 82%
+    (material not drawn), 0.5 pt white 14% border, shadow; padding 6, rows 52 tall with 2 gap, max height 370
+    (rows past it are clipped). First row: white 12% fill and the "Open" tag. Matched characters semibold."""
+    x0, x1, top = PILL[0], PILL[2], PILL[3] + 10
+    bottom = top + min(12 + 52 * len(titles) + 2 * (len(titles) - 1), 370)
+    g = m.Group(_soft_shadow(phone, (x0, top, x1, bottom), 22),
+                phone.rect(x0, top, x1, bottom, 22, "#3A3837", 0.82, stroke=WHITE, stroke_width=0.5 * S * 100, stroke_opacity=0.14))
+    for i, title in enumerate(titles):
+        y0 = top + 6 + i * 54
+        if y0 + 8 >= bottom:
+            break
+        cy = y0 + 26
+        if i == 0:
+            g.add(phone.rect(x0 + 6, y0, x1 - 6, y0 + 52, 16, WHITE, 0.12))
+        clip = min(36, bottom - (cy - 18))
+        g.add(_icon_tile(clip).move_to(phone.pt(x0 + 6 + 8 + 18, cy - 18 + clip / 2)),
+              T(title[0].upper(), 17, semibold=True).move_to(phone.pt(x0 + 6 + 8 + 18, cy)))
+        # shortcut: no tail ellipsis; every title used so far fits its row, add truncation if a longer one does not
+        bold = {f"[{a}:{b}]": m.SEMIBOLD for a, b in match_ranges(title, typed)}
+        g.add(T(title, 17, t2w=bold or None).move_to(phone.pt(x0 + 6 + 8 + 36 + 12, cy), aligned_edge=m.LEFT))
+        if i == 0:
+            tag = T("Open", 13, SPOT_GRAY, weight=m.MEDIUM).set_opacity(0.75)
+            w = tag.width / S + 18
+            g.add(phone.rect(x1 - 6 - 12 - w, cy - 12, x1 - 6 - 12, cy + 12, 7, WHITE, 0.16),
+                  tag.move_to(phone.pt(x1 - 6 - 12 - w / 2, cy)))
     return g

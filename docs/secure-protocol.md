@@ -193,6 +193,9 @@ strings occupy the remaining bytes as nonempty valid UTF-8, without a length fie
 | 7 revoked | None | 1 | serverControl |
 | 8 textResult | textID8 + success1 (0 or 1) | 10 | serverControl |
 | 9 finish | None | 1 | Control confirmation only |
+| 10 spotlightResults | count1 (0..8) + typed + count titles, each `len2 (UInt16BE) + UTF-8` | 4..2324 | serverControl |
+| 11 spotlightWatch | isOn1 (0 or 1) | 2 | clientControl |
+| 12 spotlightQuery | UTF-8 (0..256 bytes) | 1..257 | clientInput |
 
 Commands are up=0, down=1, left=2, right=3, mid/Space=4, backspace=5, enter=6,
 spotlight=7. Mac keycodes are respectively 126, 125, 123, 124, 49, 51, 36; spotlight
@@ -213,7 +216,40 @@ Ctrl+←, Ctrl+↑, Ctrl+↓. While a peer holds a button down, its moves are po
 drag events; disconnect, revoke, or drop releases held buttons like held keys. Pointer
 deltas are signed little-endian, unlike record/frame/text IDs. Unknown tags,
 invalid lengths, invalid UTF-8, and invalid command/button/boolean values fail.
-Only key, pointer, and text messages are accepted by the approved input decoder.
+Only key, pointer, text, and spotlightQuery messages are accepted by the approved input decoder. Tag 12 is the one string that may be empty (it clears the Mac's Spotlight field) and has no length prefix; the decoder rejects over 256 bytes and invalid UTF-8, and tag 12 on the control lane fails with `wrongPhase`.
+
+Spotlight results mirror (tags 10 and 11). The phone sends `spotlightWatch(1)` when
+its Spotlight overlay opens and `spotlightWatch(0)` when it closes; only an approved
+peer may send it, after the name exchange. While at least one approved peer watches,
+the Mac polls the Accessibility tree of the Spotlight panel (bundle id
+`com.apple.campo`, falling back to `com.apple.Spotlight`) every 0.2 seconds and sends
+`spotlightResults` to each watching peer when the snapshot changed. A snapshot is
+the Mac's typed text plus the visible result titles, top to bottom, at most 8. The
+server truncates typed and each title to 256 UTF-8 bytes on a character boundary.
+Strings may be empty and may contain newlines. `count 0` means nothing to show,
+including when Spotlight closes; the 256-byte cap per string is enforced by the server's truncation, not by the decoder; no panel process or no Accessibility permission also
+yields `count 0`. The decoder rejects counts above 8, lengths past the end, trailing
+bytes, and invalid UTF-8. A snapshot is sent only while that peer's notification
+queue is empty; a skipped one is retried on the next tick with newer data. Watch
+state is cleared on off, disconnect, or revoke, and the Mac then stops reading
+Accessibility for that peer. Compatibility: builds without these tags fail the
+session on an unknown tag, so the phone must not send tag 11 unless the overlay is
+open and the Mac must not send tag 10 to a peer that has not sent watch on; a new
+phone on an old Mac fails when it opts in, so release both apps together.
+
+Spotlight query (tag 12). While its overlay is open the phone sends its full cleaned
+query (newlines replaced by spaces, at most 256 UTF-8 bytes) on every change, and an
+empty one right after watch on to clear leftover text; after a reconnect it resends
+the current query. A tag 12 still queued on the phone is replaced in place by the
+newer one. The Mac applies it only for a watching peer (otherwise ignored), by setting
+the value of the `SpotlightSearchField` element in `com.apple.campo`, then
+`com.apple.Spotlight`, on its Spotlight queue with one write running and one waiting
+(latest wins). The lookup retries every 0.05 seconds for up to 0.5 seconds; if the
+field is missing the query is dropped and logged, the session stays up, and no key
+events are ever used. The phone presses Enter for "go" once the Mac's `typed` equals the
+query and no new snapshot arrived for 0.3 seconds, or after 2 seconds anyway. Builds
+13 and 14 keep working against a new Mac; a new phone on a Mac without tag 12 fails
+the session when it opens the overlay.
 
 ## Approval, Trust, and Recovery
 
@@ -308,8 +344,9 @@ for keys or clicks. Server notifications resume when updateValue backpressure cl
 
 Unicode text is capped at 4096 UTF-8 bytes, encoded and encrypted as one message,
 then fragmented; legacy TextChunk is not the secure transport. Only one text
-request may be outstanding per client, with a 30-second receipt deadline. The UI
-trims leading/trailing whitespace before sending. The server invokes
+request may be outstanding per client, with a 30-second receipt deadline. The text
+bar trims leading/trailing whitespace before sending; the Spotlight overlay does not
+use text messages and sends tag 12 instead. The server invokes
 `KeyInjector.type(value)` and then sends encrypted `textResult(success: true)`.
 That receipt means **type was invoked, not that the foreground app received or
 accepted the text**: CGEvent creation/posting and Accessibility delivery have no
@@ -328,6 +365,8 @@ endpoints do not resend pending text or provide durable text-ID deduplication.
 | Server peer count | At most 8 subscribed peers, each with independent session/queues |
 | Server notifications per peer | At most 2048 frames and 16384 framed bytes |
 | Server notification stall | 10 seconds without progress |
+| Spotlight results | At most 8 titles; typed and titles at most 256 UTF-8 bytes each |
+| Spotlight query | At most 256 UTF-8 bytes; empty allowed |
 | Server handshake through name | 10 seconds idle or 30 seconds from subscription |
 | Server pending approval | 300 seconds |
 | Partial frame assembly | 10 seconds idle or 30 seconds total |
@@ -367,6 +406,9 @@ the iOS export declaration automatically without that review.
 
 The following gates remain open; none is marked complete by a build or cleanup:
 
+- Spotlight results mirror on hardware: the panel host and AX identifiers
+  (`SpotlightSearchField`, `ResultCell`) were found on one macOS version only, and
+  the rows can trail the typed text; test other macOS versions.
 - Physical secure-v2 iPhone/Mac testing, including packet inspection for plaintext
   leakage, MTU fragmentation, sustained backpressure, failures, sleep/wake,
   reconnection, multiple peers, held-key cleanup, and receipt ambiguity.

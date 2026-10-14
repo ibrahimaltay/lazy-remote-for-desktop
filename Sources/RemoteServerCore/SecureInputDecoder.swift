@@ -8,7 +8,7 @@ enum SecureInputDecoder {
         var candidate = session
         let message = try SecureMessage(wire: candidate.open(record, lane: .clientInput))
         switch message {
-        case .key, .pointer, .text:
+        case .key, .pointer, .text, .spotlightQuery:
             session = candidate
             return message
         default:
