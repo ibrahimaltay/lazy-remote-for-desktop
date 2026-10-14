@@ -12,8 +12,11 @@ Scripts (run from the repo root):
 - `scripts/push-feature.sh`: push the current feature branch (refuses main).
 - `scripts/deploy-iphone.sh`: build, install and launch on the connected iPhone.
   Optional `DEVICE=<udid>`.
-- `scripts/deploy-mac.sh`: signed, notarized DMG via release-mac.sh, revealed in
-  Finder for QA. Slow (notarization).
+- `scripts/deploy-mac.sh`: signed, notarized DMG via release-mac.sh, then installs
+  it with install-mac.sh. Slow (notarization).
+- `scripts/install-mac.sh`: install .build/release/LazyRemote.dmg into
+  /Applications (quits the running app, replaces it, relaunches, verifies the
+  binary hash matches the DMG).
 - `scripts/create-pr.sh`: open a PR from the current feature branch into main
   (refuses main; no-op if a PR exists; needs everything committed and pushed).
 - `scripts/deploy-testflight.sh`: archive and upload the iPhone build to
@@ -41,8 +44,12 @@ Rules:
   You may fix or add scripts under scripts/ and .github/workflows/ when asked, and
   remove ones that are obsolete; say what you changed.
 - Ask the user before anything outward-facing: `push-feature.sh`, `release.sh`,
-  `deploy-testflight.sh`, and any workflow change. Installing on the iPhone and building the DMG are
-  local and need no confirmation.
+  `deploy-testflight.sh`, and any workflow change. Installing on the iPhone and
+  building and installing the Mac app are local and need no confirmation.
+- After building for QA, install on the Mac (`deploy-mac.sh`) whenever changes
+  since the installed build touch macApp/ or Sources/RemoteServerCore,
+  RemoteProtocol, RemoteSecurity (or shared code the Mac uses). Skip it for
+  iPhone-only changes.
 - Never force-push, delete remote branches or tags, or push to main.
 - Run the tester's checks first if they have not passed: `swift test` must be
   green before pushing or releasing.
@@ -61,6 +68,7 @@ merge it. Opening the PR is outward-facing, so the earlier release approval does
 not cover it.
 
 After a device or Mac deployment, stop and hand over: say what was installed
-(version, build, branch, commit), where the DMG is, and what to look at during
+(version, build, branch, commit), that the Mac app was installed in /Applications
+(and where the DMG is), and what to look at during
 manual QA based on the acceptance criteria in docs/features/<name>/plan.md, with
 extra attention to anything open in its QA log. Wait for the user's verdict.
