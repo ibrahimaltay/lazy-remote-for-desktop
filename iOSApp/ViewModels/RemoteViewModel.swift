@@ -19,20 +19,19 @@ final class RemoteViewModel {
     /// The list to draw: only for a non-empty query the Mac has caught up with. Keeps the
     /// last matching list while a newer one loads.
     private(set) var spotlightCard: SpotlightResults?
-    private var spotlightQuery = ""
 
     private let client = RemoteClient()
     private let tuning = TrackpadTuning.bundled
     private let haptics = UIImpactFeedbackGenerator(style: .rigid)
     private var textStatusReset: Task<Void, Never>?
     private var isSpotlightOpen = false
-    @ObservationIgnored private lazy var spotlight = SpotlightTyper(
-        sendText: { [unowned self] in
-            guard self.isConnected else { return false }
-            self.client.send(text: $0)
-            return true
+    /// Set when the overlay closed while "go" was pending; watch-off waits for the Enter.
+    private var closeAfterGo = false
+    @ObservationIgnored private lazy var spotlight = SpotlightQuerySync(
+        send: { [unowned self] in
+            if self.isConnected { self.client.setSpotlightQuery($0) }
         },
-        tap: { [unowned self] in self.client.tap($0) })
+        enter: { [unowned self] in self.client.tap(.enter) })
 
     var isConnected: Bool {
         if case .connected = status { return true }
@@ -66,6 +65,7 @@ final class RemoteViewModel {
                     self.updateSpotlightCard()
                 } else if self.isSpotlightOpen {
                     self.client.setSpotlightWatch(true)
+                    self.spotlight.update(self.spotlight.query)
                 }
                 UIApplication.shared.isIdleTimerDisabled = self.isConnected
             }
@@ -74,9 +74,7 @@ final class RemoteViewModel {
             // RemoteClient always reports on the main queue.
             MainActor.assumeIsolated {
                 guard let self else { return }
-                let fromSpotlight = self.spotlight.inFlight
-                self.spotlight.textDelivered(delivered)
-                if !fromSpotlight { self.show(delivered ? .sent : .failed) }
+                self.show(delivered ? .sent : .failed)
             }
         }
         client.onSpotlightResults = { [weak self] results in
@@ -84,7 +82,7 @@ final class RemoteViewModel {
             MainActor.assumeIsolated {
                 guard let self, self.isSpotlightOpen else { return }
                 self.spotlightResults = results
-                self.spotlight.macTyped(results.typed)
+                self.spotlight.snapshot(typed: results.typed)
                 self.updateSpotlightCard()
             }
         }
@@ -93,12 +91,20 @@ final class RemoteViewModel {
 
     /// Asks the Mac for its Spotlight results while the overlay is open.
     func setSpotlightOpen(_ isOpen: Bool) {
-        isSpotlightOpen = isOpen
-        if isOpen { spotlight.reset() } else { spotlightResults = nil }
-        if !isOpen { spotlight.stop() }
-        spotlightQuery = ""
+        if isOpen {
+            closeAfterGo = false
+            isSpotlightOpen = true
+            if isConnected { client.setSpotlightWatch(true) }
+            spotlight.open()
+        } else if spotlight.isGoPending {
+            closeAfterGo = true
+            return
+        } else {
+            isSpotlightOpen = false
+            spotlightResults = nil
+            if isConnected { client.setSpotlightWatch(false) }
+        }
         updateSpotlightCard()
-        if isConnected { client.setSpotlightWatch(isOpen) }
     }
 
     func start() {
@@ -203,27 +209,28 @@ final class RemoteViewModel {
         return true
     }
 
-    /// Streams the overlay's query to the Mac's open Spotlight as live edits.
+    /// Sets the Mac's Spotlight field to the overlay's query.
     func typeSpotlight(_ query: String) {
-        spotlightQuery = query
         spotlight.update(query)
         updateSpotlightCard()
     }
 
-    /// The overlay closed with Mac Spotlight: unsent edits must not become keys in another app.
-    func abandonSpotlightEdits() {
-        spotlight.stop()
-    }
-
-    /// Presses Enter once the Mac's text equals the query.
+    /// Presses Enter once the Mac's results have settled on the query (or after a timeout).
     func goSpotlight() {
-        spotlight.go()
+        guard !spotlight.isGoPending, spotlight.go() else { return }
+        Task {
+            while spotlight.isGoPending {
+                try? await Task.sleep(for: .milliseconds(100))
+                spotlight.tick()
+            }
+            if closeAfterGo { setSpotlightOpen(false) }
+        }
     }
 
     private func updateSpotlightCard() {
-        if spotlightQuery.isEmpty {
+        if spotlight.query.isEmpty {
             spotlightCard = nil
-        } else if let results = spotlightResults, results.typed == spotlightQuery {
+        } else if let results = spotlightResults, results.typed == spotlight.query {
             spotlightCard = results
         }
     }

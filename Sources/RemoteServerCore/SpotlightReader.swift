@@ -25,6 +25,46 @@ final class SpotlightReader: @unchecked Sendable {
         return .empty
     }
 
+    /// Sets the search field's value; false when the field is missing after retrying
+    /// (the panel may not exist yet after Cmd+Space). Never types keys.
+    func setQuery(_ query: String) -> Bool {
+        guard AXIsProcessTrusted() else { return false }
+        let deadline = Date().addingTimeInterval(0.5)
+        repeat {
+            if let field = findField() {
+                return AXUIElementSetAttributeValue(field, kAXValueAttribute as CFString, query as CFString) == .success
+            }
+            Thread.sleep(forTimeInterval: 0.05)
+        } while Date() < deadline
+        return false
+    }
+
+    private func findField() -> AXUIElement? {
+        for id in Self.bundleIDs {
+            guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: id).first else { continue }
+            let element = AXUIElementCreateApplication(app.processIdentifier)
+            AXUIElementSetMessagingTimeout(element, 0.5)
+            guard let windows = attribute(element, kAXWindowsAttribute) as? [AXUIElement] else { continue }
+            var budget = Self.maxNodes
+            for window in windows {
+                if let field = search(window, depth: 0, budget: &budget) { return field }
+            }
+        }
+        return nil
+    }
+
+    private func search(_ element: AXUIElement, depth: Int, budget: inout Int) -> AXUIElement? {
+        guard budget > 0 else { return nil }
+        budget -= 1
+        if attribute(element, kAXIdentifierAttribute) as? String == "SpotlightSearchField" { return element }
+        guard depth < Self.maxDepth, let children = attribute(element, kAXChildrenAttribute) as? [AXUIElement]
+        else { return nil }
+        for child in children {
+            if let field = search(child, depth: depth + 1, budget: &budget) { return field }
+        }
+        return nil
+    }
+
     private func attribute(_ element: AXUIElement, _ name: String) -> AnyObject? {
         var value: CFTypeRef?
         return AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success ? value : nil

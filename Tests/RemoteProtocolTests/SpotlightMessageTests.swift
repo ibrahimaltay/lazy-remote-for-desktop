@@ -57,6 +57,25 @@ final class SpotlightMessageTests: XCTestCase {
         XCTAssertNoThrow(try SecureMessage(wire: good))
     }
 
+    func testSpotlightQueryRoundTripAndLayout() throws {
+        for query in ["", "a", "pho", "caf\u{e9} \u{1F600}", String(repeating: "a", count: 256)] {
+            let wire = try SecureMessage.spotlightQuery(query).encoded()
+            XCTAssertEqual(wire, Data([12]) + Data(query.utf8))
+            XCTAssertEqual(try SecureMessage(wire: wire), .spotlightQuery(query))
+        }
+        XCTAssertEqual(try SecureMessage.spotlightQuery("").encoded(), Data([12]))
+    }
+
+    func testSpotlightQueryRejectsOversizedAndInvalidUTF8() {
+        let over = String(repeating: "a", count: 257)
+        XCTAssertThrowsError(try SecureMessage.spotlightQuery(over).encoded())
+        XCTAssertThrowsError(try SecureMessage.spotlightQuery(String(repeating: "\u{e9}", count: 129)).encoded())
+        XCTAssertThrowsError(try SecureMessage(wire: Data([12]) + Data(over.utf8)))
+        for bad in [Data([12, 0xff]), Data([12, 0x61, 0xc3, 0x28]), Data([12, 0xc3])] {
+            XCTAssertThrowsError(try SecureMessage(wire: bad)) { XCTAssertEqual($0 as? SecureWireError, .malformed) }
+        }
+    }
+
     func testRejectsMalformedWatch() {
         for wire in [Data([11]), Data([11, 2]), Data([11, 255]), Data([11, 1, 0]), Data([11, 0, 0])] {
             XCTAssertThrowsError(try SecureMessage(wire: wire)) { XCTAssertEqual($0 as? SecureWireError, .malformed) }

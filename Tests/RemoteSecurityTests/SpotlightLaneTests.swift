@@ -22,6 +22,11 @@ final class SpotlightLaneTests: XCTestCase {
         XCTAssertThrowsError(try server.open(watch, lane: .clientInput))
         XCTAssertThrowsError(try server.open(watch, lane: .serverControl))
         XCTAssertEqual(try SecureMessage(wire: server.open(watch, lane: .clientControl)), .spotlightWatch(true))
+        // Tag 12 travels on the client-input lane only.
+        let query = try client.seal(SecureMessage.spotlightQuery("abc").encoded(), lane: .clientInput)
+        XCTAssertThrowsError(try server.open(query, lane: .clientControl))
+        XCTAssertThrowsError(try server.open(query, lane: .serverControl))
+        XCTAssertEqual(try SecureMessage(wire: server.open(query, lane: .clientInput)), .spotlightQuery("abc"))
         // The largest tag 10 fits the session limit.
         let big = String(repeating: "a", count: 256)
         let max = try SecureMessage.spotlightResults(typed: big, titles: Array(repeating: big, count: 8)).encoded()

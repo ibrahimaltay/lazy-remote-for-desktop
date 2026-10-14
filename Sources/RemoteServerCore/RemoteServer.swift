@@ -68,6 +68,9 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
     private let spotlightReader = SpotlightReader()
     private var spotlightTimer: DispatchSourceTimer?
     private var spotlightReading = false
+    /// Latest-wins slot for tag 12: at most one write running and one waiting.
+    private var pendingQuery: String?
+    private var queryWriting = false
     private var deniedKeys = Set<Data>()
     private var deniedIDs = Set<UUID>()
     private var manager: CBPeripheralManager?
@@ -115,6 +118,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             self.clearPeers()
             self.spotlightTimer?.cancel()
             self.spotlightTimer = nil
+            self.pendingQuery = nil
             self.manager?.stopAdvertising()
             self.manager?.removeAllServices()
             self.manager = nil
@@ -181,6 +185,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
                 if let publicKey = peer.publicKey { self.deniedKeys.insert(publicKey) }
                 peer.approved = false
                 peer.watchesSpotlight = false
+                self.pendingQuery = nil
                 peer.closing = true
                 peer.controlAssembler.reset()
                 peer.inputAssembler.reset()
@@ -212,6 +217,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             for peer in affected {
                 peer.approved = false
                 peer.watchesSpotlight = false
+                self.pendingQuery = nil
                 peer.pendingSince = nil
                 peer.handshake = nil
                 peer.controlAssembler.reset()
@@ -343,6 +349,11 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             case .text(let id, let value):
                 injector.type(value)
                 try send(.textResult(id: id, success: true), to: peer)
+            case .spotlightQuery(let query):
+                if peer.watchesSpotlight {
+                    pendingQuery = query
+                    writeQuery()
+                }
             default:
                 throw SecureError.wrongPhase
             }
@@ -380,6 +391,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
                 guard peer.approved, case .spotlightWatch(let isOn) = message else { throw SecureError.wrongPhase }
                 peer.session = session
                 peer.watchesSpotlight = isOn
+                if !isOn { pendingQuery = nil }
                 peer.sentSpotlight = .empty
                 updateSpotlightPolling()
                 return
@@ -469,6 +481,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
         peer.notifications.removeAll()
         peer.notificationBytes = 0
         peer.watchesSpotlight = false
+        pendingQuery = nil
         updateSpotlightPolling()
     }
 
@@ -484,6 +497,20 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             timer.setEventHandler { [weak self] in self?.pollSpotlight() }
             spotlightTimer = timer
             timer.resume()
+        }
+    }
+
+    private func writeQuery() {
+        guard !queryWriting, let query = pendingQuery else { return }
+        pendingQuery = nil
+        queryWriting = true
+        spotlightQueue.async {
+            let ok = self.spotlightReader.setQuery(query)
+            self.queue.async {
+                if !ok { self.log.error("spotlight query dropped: search field not found") }
+                self.queryWriting = false
+                self.writeQuery()
+            }
         }
     }
 

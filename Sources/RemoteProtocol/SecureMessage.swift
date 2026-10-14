@@ -12,8 +12,10 @@ public enum SecureMessage: Sendable, Equatable {
     case finish
     case spotlightResults(typed: String, titles: [String])
     case spotlightWatch(Bool)
+    case spotlightQuery(String)
 
     public static let maxSpotlightRows = 8
+    public static let maxSpotlightQueryBytes = 256
 
     public func encoded() throws -> Data {
         switch self {
@@ -39,6 +41,10 @@ public enum SecureMessage: Sendable, Equatable {
                 return $0 + Data([UInt8(bytes.count >> 8), UInt8(bytes.count & 0xff)]) + bytes
             }
         case .spotlightWatch(let isOn): return Data([11, isOn ? 1 : 0])
+        case .spotlightQuery(let query):
+            // Unlike other strings, empty is valid: it clears the Mac's field.
+            guard query.utf8.count <= Self.maxSpotlightQueryBytes else { throw SecureWireError.oversized }
+            return Data([12]) + Data(query.utf8)
         }
     }
 
@@ -90,6 +96,10 @@ public enum SecureMessage: Sendable, Equatable {
         case 11:
             guard bytes.count == 2, bytes[1] <= 1 else { throw SecureWireError.malformed }
             self = .spotlightWatch(bytes[1] == 1)
+        case 12:
+            guard bytes.count <= 1 + Self.maxSpotlightQueryBytes else { throw SecureWireError.oversized }
+            guard let value = String(data: payload, encoding: .utf8) else { throw SecureWireError.malformed }
+            self = .spotlightQuery(value)
         default:
             throw SecureWireError.malformed
         }
