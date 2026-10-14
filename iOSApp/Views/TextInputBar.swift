@@ -5,7 +5,7 @@ struct TextInputBar: View {
     @Binding var isFocused: Bool
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 10) {
+        HStack(alignment: .bottom, spacing: 0) {
             LiveTextField(model: model, isFocused: $isFocused)
                 .padding(.horizontal, 16)
                 .frame(minHeight: 44)
@@ -14,7 +14,7 @@ struct TextInputBar: View {
                     in: RoundedRectangle(cornerRadius: 20, style: .continuous)
                 )
 
-            if isFocused {
+            // Always laid out; width and opacity ease with the keyboard (no insertion travel).
             Button(action: model.sendText) {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 17, weight: .semibold))
@@ -24,11 +24,14 @@ struct TextInputBar: View {
             }
             .accessibilityLabel("Send")
             .opacity(model.isConnected ? 1 : 0.5)
-            .disabled(!model.isConnected)
-            }
+            .disabled(!model.isConnected || !isFocused)
+            .padding(.leading, 10)
+            .frame(width: isFocused ? 52 : 0, alignment: .trailing)
+            .clipped()
+            .opacity(isFocused ? 1 : 0)
+            .accessibilityHidden(!isFocused)
         }
-        // No animation: Send appears in place while the bar rises with the keyboard.
-        .transaction { $0.animation = nil }
+        .animation(.easeOut(duration: 0.25), value: isFocused)
         .padding(.horizontal, 20)
         .padding(.top, 4)
         .padding(.bottom, 12)
