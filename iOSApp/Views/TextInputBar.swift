@@ -4,8 +4,6 @@ struct TextInputBar: View {
     let model: RemoteViewModel
     @Binding var isFocused: Bool
 
-    @State private var repeatTask: Task<Void, Never>?
-
     var body: some View {
         HStack(alignment: .bottom, spacing: 10) {
             LiveTextField(model: model, isFocused: $isFocused)
@@ -15,65 +13,10 @@ struct TextInputBar: View {
                     Color(.systemGray5),
                     in: RoundedRectangle(cornerRadius: 20, style: .continuous)
                 )
-
-            backspaceButton
-
-            enterButton
         }
         .animation(.easeOut(duration: 0.2), value: isFocused)
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
-        .onChange(of: isFocused) { _, focused in
-            if !focused { stopDeleting() }
-        }
-        .onDisappear(perform: stopDeleting)
-    }
-
-    /// Deletes on the Mac, not in the draft above it — the system keyboard already
-    /// has its own backspace for that.
-    private var backspaceButton: some View {
-        Image(systemName: "delete.left")
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(isDeleting ? Color.white : Color.primary)
-            .frame(width: 42, height: 42)
-            .background(Circle().fill(isDeleting ? Color.accentColor : Color(.systemGray5)))
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in startDeleting() }
-                    .onEnded { _ in stopDeleting() }
-            )
-            .disabled(!model.isConnected)
-    }
-
-    private var enterButton: some View {
-        Button(action: { model.tap(.enter) }) {
-            Image(systemName: "return")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color.primary)
-                .frame(width: 42, height: 42)
-                .background(Circle().fill(Color(.systemGray5)))
-        }
-        .disabled(!model.isConnected)
-    }
-
-    private var isDeleting: Bool { repeatTask != nil }
-
-    private func startDeleting() {
-        guard repeatTask == nil else { return }
-        model.tap(.backspace)
-
-        repeatTask = Task {
-            try? await Task.sleep(for: .milliseconds(450))
-            while !Task.isCancelled {
-                model.tap(.backspace, feedback: false)
-                try? await Task.sleep(for: .milliseconds(60))
-            }
-        }
-    }
-
-    private func stopDeleting() {
-        repeatTask?.cancel()
-        repeatTask = nil
     }
 }
 

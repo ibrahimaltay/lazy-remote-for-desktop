@@ -27,6 +27,7 @@ No design changes, therefore no inputs.
 | 11 | Backspace in empty phone field | Deletes on the Mac; nothing | Deletes on the Mac | Real-keyboard feel. *Proposed* |
 | 12 | Disconnect/reconnect | Replay pending edits; re-baseline without sending | Re-baseline, never replay | Edits are not idempotent; matches the no-retry rule. *Proposed* |
 | 13 | Release | iphone / mac / both | both | Mac must understand tag 13 |
+| 15 | Backspace and Return buttons beside the field (from QA) | Keep; remove | Remove both | User choice. The keyboard's Return key presses Return on the Mac and backspace in an empty field deletes on the Mac, so the buttons duplicate them |
 | 14 | Phone cursor (supersedes 5, from QA) | Clear field on cursor move; lock cursor to end; retype tail; select-all replace; mirror with arrows | Lock the phone cursor to the end of the text | Tapping mid-text cleared the phone but not the Mac, so they differed. Locking keeps the cursor equal to the Mac's; no wire change. Typos are fixed by backspacing. Reset stays as a safety net |
 
 ## Scope
