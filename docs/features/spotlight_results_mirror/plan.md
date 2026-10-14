@@ -51,7 +51,7 @@ Out (deliberately): tapping or selecting results, icons, subtitles, chips, scrol
 
 - [ ] Port the spike parser (`scripts/spike/spotlight_ax.swift` on `spike/spotlight-ax-results`) into `RemoteServerCore` as a pure `SpotlightSnapshot` parser over value nodes, plus a thin AX walker
 - [ ] `RemoteProtocol`: add `SecureMessage` cases and encode/decode for tags 10 and 11 with the limits above
-- [ ] `RemoteServerCore`: decode tag 11 in the approved client-control path; per-peer watch state; 0.2s poll while any peer watches; send tag 10 on change only; send an empty list when Spotlight closes; stop and clear on off, disconnect, revoke
+- [ ] `RemoteServerCore`: decode tag 11 in the approved client-control path; per-peer watch state; 0.2s poll while any peer watches; send tag 10 on change only, and only when that peer's notification queue is empty (mark a snapshot sent only when actually sent, so a skipped one is retried next tick with newer data; a full queue makes `enqueue` throw and ends the session); send an empty list when Spotlight closes; stop and clear on off, disconnect, revoke
 - [ ] `RemoteClientCore`: decode tag 10 from the server control lane; expose `spotlightResults` (`typed`, `titles`); `RemoteClient` sends tag 11 on/off
 - [ ] `RemoteViewModel`: publish results; overlay open sends watch on, close and disconnect send off; clear results on close
 - [ ] iOS overlay: minimal text list under the pill, VoiceOver-readable, no tap action
@@ -68,6 +68,7 @@ Out (deliberately): tapping or selecting results, icons, subtitles, chips, scrol
 - Malformed tag 10 or 11 (bad count, short length, trailing bytes, invalid UTF-8, wrong lane) fails the session; no plaintext fallback.
 - No AX process found, or Accessibility denied, yields an empty list and no crash.
 - Unchanged snapshots are not re-sent.
+- Rapid result changes never fill a peer's notification queue: an update is skipped while that peer has frames queued, and the latest snapshot is sent once it drains.
 
 ## Done when
 
