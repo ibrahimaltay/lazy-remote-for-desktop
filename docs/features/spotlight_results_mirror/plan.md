@@ -28,7 +28,7 @@ When the phone's Spotlight overlay is open and the user types, the overlay lists
 | 10 | Privacy | filter; send all | Send all | User choice: the user's own phone |
 | 11 | Stale rows vs typed text | tag and wait; ignore | Ignore | User choice: assume the lag is invisible; judge in device QA |
 | 12 | Rows that fail the design's match rule | filter them out; show all, bold matches | Show every row the Mac sends; bold only matched characters | Mirrors the Mac. The "no matches" state means the Mac sent no rows |
-| 13 | Row cap | 8 (what AX shows); 20 | 20 on the wire | Safety ceiling for message size; the Mac exposes ~8 rows in practice |
+| 13 | Row cap | 8 (what AX shows); 20 | 8 on the wire | User choice: the Mac exposes ~8 rows and that is enough. Raising it later changes the wire contract (old phones reject longer lists), so it needs an opt-in/version step |
 
 ## Scope
 
@@ -38,7 +38,7 @@ Out (deliberately): tapping or selecting results, icons, subtitles, chips, scrol
 ## Constraints
 
 - **Wire change.** Update [docs/secure-protocol.md](../../secure-protocol.md) and codec/transport tests. Tags 1-9 are taken (9 is control confirmation only). New tags:
-  - `10 spotlightResults`, **serverControl** lane: `count1` (0..20), `typed` then `count` titles, each as `len2 (UInt16BE) + UTF-8`. The server truncates typed to 256 and each title to 256 UTF-8 bytes on a character boundary and caps rows at 20, so the plaintext is at most 5,420 bytes, under the 8,192 reassembly limit. `count 0` means nothing to show (also sent when Spotlight closes). The decoder rejects counts above 20, lengths past the end, trailing bytes and invalid UTF-8.
+  - `10 spotlightResults`, **serverControl** lane: `count1` (0..8), `typed` then `count` titles, each as `len2 (UInt16BE) + UTF-8`. The server truncates typed to 256 and each title to 256 UTF-8 bytes on a character boundary and keeps only the first 8 rows (top to bottom), so the plaintext is at most 2,324 bytes, well under the 8,192 reassembly limit. `count 0` means nothing to show (also sent when Spotlight closes). The decoder rejects counts above 8, lengths past the end, trailing bytes and invalid UTF-8.
   - `11 spotlightWatch`, **clientControl** lane: `isOn1` (0 or 1). Only an approved peer may send it.
   - Existing decoders fail on unknown tags, so the client must not send tag 11 unless the overlay is open, and the server must not send tag 10 to a peer that has not opted in.
 - **Security fail-closed.** No plaintext path. Malformed 10/11 fail the session like other tags. Server reads AX only for an approved, subscribed peer with the overlay open, and stops on off, disconnect or revoke.
