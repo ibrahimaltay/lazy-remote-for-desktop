@@ -1,6 +1,6 @@
 # Live Keyboard
 
-Status: in progress
+Status: shipped
 
 ## Goal
 
