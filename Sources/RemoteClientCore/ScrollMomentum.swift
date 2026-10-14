@@ -7,11 +7,15 @@ public struct ScrollMomentum: Sendable {
     public private(set) var velocityY: Double
     private let tuning: TrackpadTuning.Momentum
 
-    /// Nil when momentum is off or the flick was too slow to coast.
-    public init?(velocityX: Double, velocityY: Double, tuning: TrackpadTuning.Momentum) {
-        let speed = hypot(velocityX, velocityY)
-        guard tuning.enabled, speed.isFinite, speed >= tuning.minStartVelocity else { return nil }
-        let scale = min(1, tuning.maxVelocity / speed)
+    /// Nil when momentum is off or the flick was too slow to coast. `fingerTravel`
+    /// (points moved during the gesture) weakens the coast of short swipes.
+    public init?(velocityX: Double, velocityY: Double, fingerTravel: Double, tuning: TrackpadTuning.Momentum) {
+        let rawSpeed = hypot(velocityX, velocityY)
+        guard tuning.enabled, rawSpeed.isFinite, fingerTravel.isFinite else { return nil }
+        let travelScale = tuning.fullCoastTravel > 0 ? min(1, max(0, fingerTravel) / tuning.fullCoastTravel) : 1
+        let speed = rawSpeed * travelScale
+        guard speed >= tuning.minStartVelocity else { return nil }
+        let scale = travelScale * min(1, tuning.maxVelocity / speed)
         self.velocityX = velocityX * scale
         self.velocityY = velocityY * scale
         self.tuning = tuning

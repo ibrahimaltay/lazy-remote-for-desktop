@@ -16,12 +16,13 @@
     "naturalDirection": true,
 
     "momentum": {
-      "_help": "Coasting after lift-off, in Mac pixels/s. velocityKeptPerSecond: 0.135 is iOS-like, lower stops sooner.",
+      "_help": "Coasting after lift-off, in Mac pixels/s. velocityKeptPerSecond: 0.135 is iOS-like, lower stops sooner. fullCoastTravel: finger travel in points (whole scroll gesture) that earns the full start velocity; shorter swipes get a proportionally weaker coast. maxVelocity is the backstop.",
       "enabled": true,
       "velocityKeptPerSecond": 0.135,
       "minStartVelocity": 150,
       "stopVelocity": 15,
-      "maxVelocity": 8000
+      "maxVelocity": 8000,
+      "fullCoastTravel": 300
     }
   },
 
