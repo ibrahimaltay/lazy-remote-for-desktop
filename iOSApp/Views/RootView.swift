@@ -70,7 +70,10 @@ struct RootView: View {
     private func closeSpotlight(closeMac: Bool) {
         guard isSpotlight else { return }
         isSpotlight = false
-        if closeMac && model.textStatus != .sending { model.tap(.spotlight, feedback: false) }
+        if closeMac {
+            model.abandonSpotlightEdits()
+            model.tap(.spotlight, feedback: false)
+        }
     }
 
     /// Fires on touch-down so a stray touch while typing only dismisses the

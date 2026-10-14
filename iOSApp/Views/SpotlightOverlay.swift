@@ -61,7 +61,7 @@ struct SpotlightOverlay: View {
 
             VStack(spacing: 10) {
                 pill
-                if let results = model.spotlightResults, !results.titles.isEmpty {
+                if let results = model.spotlightCard, !results.titles.isEmpty {
                     ResultsCard(results: results)
                 }
             }
@@ -72,6 +72,7 @@ struct SpotlightOverlay: View {
             isFocused = true
             model.setSpotlightOpen(true)
         }
+        .onChange(of: query) { model.typeSpotlight(query) }
         .onDisappear { model.setSpotlightOpen(false) }
     }
 
@@ -107,7 +108,7 @@ struct SpotlightOverlay: View {
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             close(true)
         } else {
-            model.submitSpotlight(text)
+            model.goSpotlight()
             close(false)
         }
     }

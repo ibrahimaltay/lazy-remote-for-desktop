@@ -329,8 +329,10 @@ for keys or clicks. Server notifications resume when updateValue backpressure cl
 
 Unicode text is capped at 4096 UTF-8 bytes, encoded and encrypted as one message,
 then fragmented; legacy TextChunk is not the secure transport. Only one text
-request may be outstanding per client, with a 30-second receipt deadline. The UI
-trims leading/trailing whitespace before sending. The server invokes
+request may be outstanding per client, with a 30-second receipt deadline. The text
+bar trims leading/trailing whitespace before sending; the Spotlight overlay instead
+streams untrimmed edits (text for the added characters, Backspace keys for removed
+ones, at most 256 UTF-8 bytes, newlines replaced by spaces), one text in flight. The server invokes
 `KeyInjector.type(value)` and then sends encrypted `textResult(success: true)`.
 That receipt means **type was invoked, not that the foreground app received or
 accepted the text**: CGEvent creation/posting and Accessibility delivery have no

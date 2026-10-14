@@ -15,16 +15,24 @@ final class RemoteViewModel {
     private(set) var status: RemoteClient.Status = .stopped
     private(set) var textStatus: TextStatus?
     /// What the Mac's Spotlight shows; nil unless the overlay is open.
-    private(set) var spotlightResults: SpotlightResults?
+    private var spotlightResults: SpotlightResults?
+    /// The list to draw: only for a non-empty query the Mac has caught up with. Keeps the
+    /// last matching list while a newer one loads.
+    private(set) var spotlightCard: SpotlightResults?
+    private var spotlightQuery = ""
 
     private let client = RemoteClient()
     private let tuning = TrackpadTuning.bundled
     private let haptics = UIImpactFeedbackGenerator(style: .rigid)
     private var textStatusReset: Task<Void, Never>?
     private var isSpotlightOpen = false
-    @ObservationIgnored private lazy var spotlight = SpotlightSubmitter(
-        send: { [unowned self] in self.send(text: $0) },
-        pressEnter: { [unowned self] in self.tap(.enter, feedback: false) })
+    @ObservationIgnored private lazy var spotlight = SpotlightTyper(
+        sendText: { [unowned self] in
+            guard self.isConnected else { return false }
+            self.client.send(text: $0)
+            return true
+        },
+        tap: { [unowned self] in self.client.tap($0) })
 
     var isConnected: Bool {
         if case .connected = status { return true }
@@ -55,6 +63,7 @@ final class RemoteViewModel {
                 if !self.isConnected {
                     self.spotlight.reset()
                     self.spotlightResults = nil
+                    self.updateSpotlightCard()
                 } else if self.isSpotlightOpen {
                     self.client.setSpotlightWatch(true)
                 }
@@ -65,8 +74,9 @@ final class RemoteViewModel {
             // RemoteClient always reports on the main queue.
             MainActor.assumeIsolated {
                 guard let self else { return }
-                self.show(delivered ? .sent : .failed)
+                let fromSpotlight = self.spotlight.inFlight
                 self.spotlight.textDelivered(delivered)
+                if !fromSpotlight { self.show(delivered ? .sent : .failed) }
             }
         }
         client.onSpotlightResults = { [weak self] results in
@@ -74,6 +84,8 @@ final class RemoteViewModel {
             MainActor.assumeIsolated {
                 guard let self, self.isSpotlightOpen else { return }
                 self.spotlightResults = results
+                self.spotlight.macTyped(results.typed)
+                self.updateSpotlightCard()
             }
         }
         haptics.prepare()
@@ -82,7 +94,10 @@ final class RemoteViewModel {
     /// Asks the Mac for its Spotlight results while the overlay is open.
     func setSpotlightOpen(_ isOpen: Bool) {
         isSpotlightOpen = isOpen
-        if !isOpen { spotlightResults = nil }
+        if isOpen { spotlight.reset() } else { spotlightResults = nil }
+        if !isOpen { spotlight.stop() }
+        spotlightQuery = ""
+        updateSpotlightCard()
         if isConnected { client.setSpotlightWatch(isOpen) }
     }
 
@@ -188,9 +203,29 @@ final class RemoteViewModel {
         return true
     }
 
-    /// Types into the Mac's open Spotlight, then presses Enter once the text is confirmed.
-    func submitSpotlight(_ text: String) {
-        spotlight.submit(text)
+    /// Streams the overlay's query to the Mac's open Spotlight as live edits.
+    func typeSpotlight(_ query: String) {
+        spotlightQuery = query
+        spotlight.update(query)
+        updateSpotlightCard()
+    }
+
+    /// The overlay closed with Mac Spotlight: unsent edits must not become keys in another app.
+    func abandonSpotlightEdits() {
+        spotlight.stop()
+    }
+
+    /// Presses Enter once the Mac's text equals the query.
+    func goSpotlight() {
+        spotlight.go()
+    }
+
+    private func updateSpotlightCard() {
+        if spotlightQuery.isEmpty {
+            spotlightCard = nil
+        } else if let results = spotlightResults, results.typed == spotlightQuery {
+            spotlightCard = results
+        }
     }
 
     private func show(_ status: TextStatus) {
