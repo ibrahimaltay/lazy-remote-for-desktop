@@ -119,6 +119,28 @@ private struct LiveTextField: UIViewRepresentable {
             if (text ?? "").isEmpty { onEmptyBackspace?() }
             super.deleteBackward()
         }
+
+        // Cursor lock (decision 14): the phone cursor always equals the Mac's, at the end.
+        override func closestPosition(to point: CGPoint) -> UITextPosition? { endOfDocument }
+
+        // Covers taps, spacebar drag and hardware arrows; composition keeps its own range.
+        override var selectedTextRange: UITextRange? {
+            get { super.selectedTextRange }
+            set {
+                if markedTextRange == nil, let end = textRange(from: endOfDocument, to: endOfDocument) {
+                    super.selectedTextRange = end
+                } else {
+                    super.selectedTextRange = newValue
+                }
+            }
+        }
+
+        override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+            if action == #selector(UIResponder.select(_:)) || action == #selector(UIResponder.selectAll(_:)) {
+                return false
+            }
+            return super.canPerformAction(action, withSender: sender)
+        }
     }
 
     final class Coordinator: NSObject, UITextFieldDelegate {
