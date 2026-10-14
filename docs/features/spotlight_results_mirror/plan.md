@@ -27,6 +27,8 @@ When the phone's Spotlight overlay is open and the user types, the overlay lists
 | 9 | Tap a result | in scope; out | Out | User choice. The tap-vs-refresh race is a QA item |
 | 10 | Privacy | filter; send all | Send all | User choice: the user's own phone |
 | 11 | Stale rows vs typed text | tag and wait; ignore | Ignore | User choice: assume the lag is invisible; judge in device QA |
+| 12 | Rows that fail the design's match rule | filter them out; show all, bold matches | Show every row the Mac sends; bold only matched characters | Mirrors the Mac. The "no matches" state means the Mac sent no rows |
+| 13 | Row cap | 8 (what AX shows); 20 | 20 on the wire | Safety ceiling for message size; the Mac exposes ~8 rows in practice |
 
 ## Scope
 
@@ -90,7 +92,6 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 1. **Row races.** The spike showed rows can trail the typed text ("pho" showed "ph" results, "l" showed "photos" results). Mirrored faithfully, but the phone is also ahead over BLE. Judge in device QA; the fix is to tag rows with the typed text.
 2. **Settled indicator.** Does the phone need a spinner or dimmed list while rows are stale? Needs the same typed-text tagging.
 3. **OS fragility.** The panel host (`com.apple.campo`) and AX identifiers (`SpotlightSearchField`, `ResultCell`) were found on this macOS only. Test on another macOS version before shipping.
-4. **Filter or highlight.** The design hides the card when "no row's word starts with the query" and bolds the matched part. The Mac's list can contain rows that fail that rule (spike: "lol" returned a LinkedIn notification title). Decide: show every row the Mac sends and only bold matches (mirrors the Mac, my default), or drop non-matching rows (matches the design's "no matches" state, but hides what the Mac shows).
 5. **Rows below the fold.** AX exposes only ~8 rows; showing more needs scroll handling.
 6. **Tap to open.** The design already includes row tap (pressed fill, closes Spotlight). It is out of scope here; when added, tap needs a snapshot sequence so a tap maps to the row the user saw.
-7. **Design rows vs Mac rows.** The design card scrolls for "many matches"; the wire caps at 20 rows. The "Open" tag on the first row marks the top hit; the Mac's first row is the top hit, so it needs no extra field.
+7. **Open tag.** The "Open" tag on the first row marks the top hit; the Mac's first row is the top hit, so it needs no extra field.
