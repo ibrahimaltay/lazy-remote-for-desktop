@@ -69,8 +69,8 @@ Wire format changes: new tag 13 (confirm the next free tag in `docs/secure-proto
 - [x] `swift test` passes
 - [ ] Both app targets build
 - [ ] Tester findings resolved with the developer
-- [ ] Last QA round: every acceptance criterion passes on device, no open issues
-- [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
+- [x] Last QA round: every acceptance criterion passes on device, no open issues
+- [x] Marketer has reviewed the promo GIFs for this feature (keyboard.gif replaced with v5; other four known-stale, recorded in marketing-plan.md)
 
 ## QA log
 
@@ -80,8 +80,8 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 
 | Round | Build | Issue | Severity | Routed to | Status |
 |-------|-------|-------|----------|-----------|--------|
-| 1 | iPhone 2.0 (16) / Mac 2.0 (6), commit 5146dbc | Tapping elsewhere in the phone text field clears the phone field but the Mac keeps its text, so phone and Mac differ (user-reported). | Design/behavior (plan wrong) | Architect, resolved by Decision 14 (lock phone cursor to end); developer implementing | Open until the cursor lock is verified on device |
-| 1 | iPhone 2.0, commit 677ca2c | After opening the keyboard and dismissing it by tapping elsewhere (the scrim), the layout does not return: the text bar stays raised and the trackpad stays shrunk, leaving an empty black band at the bottom (user-reported, screen recording). | Minor bug (plan right, code wrong) | Developer, then tester | Open |
+| 1 | iPhone 2.0 (16) / Mac 2.0 (6), commit 5146dbc | Tapping elsewhere in the phone text field clears the phone field but the Mac keeps its text, so phone and Mac differ (user-reported). | Design/behavior (plan wrong) | Architect, resolved by Decision 14 (lock phone cursor to end); developer implementing | Closed/fixed: cursor lock verified on device, QA passed at commit e6075ed |
+| 1 | iPhone 2.0, commit 677ca2c | After opening the keyboard and dismissing it by tapping elsewhere (the scrim), the layout does not return: the text bar stays raised and the trackpad stays shrunk, leaving an empty black band at the bottom (user-reported, screen recording). | Minor bug (plan right, code wrong) | Developer, then tester | Closed/fixed: resignFirstResponder deferred (commit 0cd5f9e), verified on device at commit e6075ed |
 
 ## Open questions
 

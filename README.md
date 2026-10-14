@@ -28,9 +28,9 @@ A remote button you can place anywhere on the screen, or dock in the top bar. Ta
 
 ### Keyboard
 
-Type on your iPhone and send the text straight to your Mac, in any language, emoji included. Hold Backspace to delete quickly, and tap Enter for a new line.
+Type on your iPhone and the words appear on your Mac as you type, in any language, emoji included. Autocorrect and dictation fixes follow along. Tap Send to press Return and start fresh.
 
-![Sending a mixed-language message with an emoji to Mac Notes, then deleting and pressing Enter](readme-gifs/keyboard.gif)
+![Typing on the iPhone and the words appearing live in Mac Notes, with autocorrect syncing, then tapping Send](readme-gifs/keyboard.gif)
 
 ### Spotlight
 
@@ -44,8 +44,8 @@ Tap the magnifier and type. Your Mac's Spotlight results show up on your iPhone 
 - **Floating remote:** a button you can place anywhere on the screen or dock in the top bar; tap it for the D-pad.
 - **Trackpad:** move the cursor; tap to click, two-finger tap to right-click.
 - **Gestures:** two-finger scroll with momentum, long-press to drag, and three-finger swipe for desktops and Mission Control.
-- **Keyboard:** type on your iPhone and send the text straight to your Mac.
-- **Any language and emoji:** send text in any script, emoji included.
+- **Keyboard:** type on your iPhone and the words appear on your Mac as you type.
+- **Any language and emoji:** type in any script, emoji included.
 - **Spotlight:** opens Spotlight on your Mac by sending ⌘ Space, then type your search from the iPhone. Results appear on your iPhone as you type (view only). Press go to open the top result, or tap outside to cancel. A custom Spotlight shortcut isn't supported.
 - **Direct and encrypted:** connects over Bluetooth, with no Wi-Fi setup or accounts.
 - **Free:** no ads, no tracking, no in-app purchases.
@@ -78,7 +78,7 @@ The iPhone app will be on the App Store soon.
 9. On your Mac, click the LazyRemote icon in the menu bar.
 10. Select **Allow** followed by the name of your iPhone.
 11. Make sure that the iPhone shows the name of your Mac with a green dot.
-12. Use the trackpad and the buttons below it to control your Mac. To type, tap **Type to send** and then select the send button.
+12. Use the trackpad and the buttons below it to control your Mac. To type, tap **Type to send** and start typing; the text appears on your Mac as you go.
 
 ## Reset Pairing
 
