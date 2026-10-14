@@ -8,12 +8,13 @@ struct TextInputBar: View {
         HStack(alignment: .bottom, spacing: 10) {
             LiveTextField(model: model, isFocused: $isFocused)
                 .padding(.horizontal, 16)
-                .padding(.vertical, 11)
+                .frame(minHeight: 44)
                 .background(
                     Color(.systemGray5),
                     in: RoundedRectangle(cornerRadius: 20, style: .continuous)
                 )
 
+            if isFocused {
             Button(action: model.sendText) {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 17, weight: .semibold))
@@ -24,10 +25,16 @@ struct TextInputBar: View {
             .accessibilityLabel("Send")
             .opacity(model.isConnected ? 1 : 0.5)
             .disabled(!model.isConnected)
+            .transition(.opacity)
+            }
         }
         .animation(.easeOut(duration: 0.2), value: isFocused)
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 12)
+        // Tapping the bar's padding also opens the keyboard.
+        .contentShape(.rect)
+        .onTapGesture { isFocused = true }
     }
 }
 
