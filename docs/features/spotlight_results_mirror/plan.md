@@ -49,14 +49,14 @@ Out (deliberately): tapping or selecting results, icons, subtitles, chips, scrol
 
 ## Steps
 
-- [ ] Port the spike parser (`scripts/spike/spotlight_ax.swift` on `spike/spotlight-ax-results`) into `RemoteServerCore` as a pure `SpotlightSnapshot` parser over value nodes, plus a thin AX walker
-- [ ] `RemoteProtocol`: add `SecureMessage` cases and encode/decode for tags 10 and 11 with the limits above
-- [ ] `RemoteServerCore`: decode tag 11 in the approved client-control path; per-peer watch state; 0.2s poll while any peer watches; send tag 10 on change only, and only when that peer's notification queue is empty (mark a snapshot sent only when actually sent, so a skipped one is retried next tick with newer data; a full queue makes `enqueue` throw and ends the session); send an empty list when Spotlight closes; stop and clear on off, disconnect, revoke
-- [ ] `RemoteClientCore`: decode tag 10 from the server control lane; expose `spotlightResults` (`typed`, `titles`); `RemoteClient` sends tag 11 on/off
-- [ ] `RemoteViewModel`: publish results; overlay open sends watch on, close and disconnect send off; clear results on close
-- [ ] iOS overlay: minimal text list under the pill, VoiceOver-readable, no tap action
-- [ ] Update `docs/secure-protocol.md` (message table, limits, compatibility note, release gates note)
-- [ ] `xcodegen generate`; build both app targets; run `swift test`
+- [x] Port the spike parser (`scripts/spike/spotlight_ax.swift` on `spike/spotlight-ax-results`) into `RemoteServerCore` as a pure `SpotlightSnapshot` parser over value nodes, plus a thin AX walker
+- [x] `RemoteProtocol`: add `SecureMessage` cases and encode/decode for tags 10 and 11 with the limits above
+- [x] `RemoteServerCore`: decode tag 11 in the approved client-control path; per-peer watch state; 0.2s poll while any peer watches; send tag 10 on change only, and only when that peer's notification queue is empty (mark a snapshot sent only when actually sent, so a skipped one is retried next tick with newer data; a full queue makes `enqueue` throw and ends the session); send an empty list when Spotlight closes; stop and clear on off, disconnect, revoke
+- [x] `RemoteClientCore`: decode tag 10 from the server control lane; expose `spotlightResults` (`typed`, `titles`); `RemoteClient` sends tag 11 on/off
+- [x] `RemoteViewModel`: publish results; overlay open sends watch on, close and disconnect send off; clear results on close
+- [x] iOS overlay: minimal text list under the pill, VoiceOver-readable, no tap action
+- [x] Update `docs/secure-protocol.md` (message table, limits, compatibility note, release gates note)
+- [x] `xcodegen generate`; build both app targets; run `swift test`
 
 ## Acceptance criteria
 
@@ -73,9 +73,9 @@ Out (deliberately): tapping or selecting results, icons, subtitles, chips, scrol
 ## Done when
 
 - [ ] Acceptance criteria verified by tests
-- [ ] `swift test` passes
-- [ ] Both app targets build
-- [ ] Tester findings resolved with the developer
+- [x] `swift test` passes
+- [x] Both app targets build
+- [x] Tester findings resolved with the developer
 - [ ] Last QA round: every acceptance criterion passes on device, no open issues
 - [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
 

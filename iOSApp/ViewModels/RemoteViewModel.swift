@@ -14,11 +14,14 @@ final class RemoteViewModel {
 
     private(set) var status: RemoteClient.Status = .stopped
     private(set) var textStatus: TextStatus?
+    /// What the Mac's Spotlight shows; nil unless the overlay is open.
+    private(set) var spotlightResults: SpotlightResults?
 
     private let client = RemoteClient()
     private let tuning = TrackpadTuning.bundled
     private let haptics = UIImpactFeedbackGenerator(style: .rigid)
     private var textStatusReset: Task<Void, Never>?
+    private var isSpotlightOpen = false
     @ObservationIgnored private lazy var spotlight = SpotlightSubmitter(
         send: { [unowned self] in self.send(text: $0) },
         pressEnter: { [unowned self] in self.tap(.enter, feedback: false) })
@@ -49,7 +52,12 @@ final class RemoteViewModel {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 self.status = status
-                if !self.isConnected { self.spotlight.reset() }
+                if !self.isConnected {
+                    self.spotlight.reset()
+                    self.spotlightResults = nil
+                } else if self.isSpotlightOpen {
+                    self.client.setSpotlightWatch(true)
+                }
                 UIApplication.shared.isIdleTimerDisabled = self.isConnected
             }
         }
@@ -61,7 +69,21 @@ final class RemoteViewModel {
                 self.spotlight.textDelivered(delivered)
             }
         }
+        client.onSpotlightResults = { [weak self] results in
+            // RemoteClient always reports on the main queue.
+            MainActor.assumeIsolated {
+                guard let self, self.isSpotlightOpen else { return }
+                self.spotlightResults = results
+            }
+        }
         haptics.prepare()
+    }
+
+    /// Asks the Mac for its Spotlight results while the overlay is open.
+    func setSpotlightOpen(_ isOpen: Bool) {
+        isSpotlightOpen = isOpen
+        if !isOpen { spotlightResults = nil }
+        if isConnected { client.setSpotlightWatch(isOpen) }
     }
 
     func start() {

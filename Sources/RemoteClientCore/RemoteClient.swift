@@ -26,6 +26,9 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
     /// Called on the main queue after the encrypted injection result, or failure.
     public var onTextDelivered: ((Bool) -> Void)?
 
+    /// Called on the main queue with what the Mac's Spotlight shows, while watching.
+    public var onSpotlightResults: ((SpotlightResults) -> Void)?
+
     private enum Stage {
         case idle, connecting, services, characteristics, subscribing
         case serverHello, serverFinish, approval, ready, failed
@@ -255,6 +258,17 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
                     self.fail("Text delivery timed out. Reconnect to the Mac before trying again.")
                 }
                 self.enqueueInput(.text(id: id, value: text))
+            } catch { self.failSecurity(error) }
+        }
+    }
+
+    /// Ask the Mac to stream its Spotlight results. Send on only while the overlay is open.
+    public func setSpotlightWatch(_ isOn: Bool) {
+        queue.async {
+            guard self.stage == .ready else { return }
+            do {
+                try self.enqueue(.message(.spotlightWatch(isOn)), control: true, type: .withResponse)
+                self.pump()
             } catch { self.failSecurity(error) }
         }
     }
@@ -726,6 +740,10 @@ extension RemoteClient: CBPeripheralDelegate {
                 textTimer = UUID()
                 reportText(delivered: delivered)
             }
+        case .spotlightResults(let typed, let titles):
+            guard stage == .ready else { throw SecureError.wrongPhase }
+            let results = SpotlightResults(typed: typed, titles: titles)
+            DispatchQueue.main.async { self.onSpotlightResults?(results) }
         default: throw SecureError.malformedMessage
         }
     }

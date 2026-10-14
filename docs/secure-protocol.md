@@ -193,6 +193,8 @@ strings occupy the remaining bytes as nonempty valid UTF-8, without a length fie
 | 7 revoked | None | 1 | serverControl |
 | 8 textResult | textID8 + success1 (0 or 1) | 10 | serverControl |
 | 9 finish | None | 1 | Control confirmation only |
+| 10 spotlightResults | count1 (0..8) + typed + count titles, each `len2 (UInt16BE) + UTF-8` | 4..2324 | serverControl |
+| 11 spotlightWatch | isOn1 (0 or 1) | 2 | clientControl |
 
 Commands are up=0, down=1, left=2, right=3, mid/Space=4, backspace=5, enter=6,
 spotlight=7. Mac keycodes are respectively 126, 125, 123, 124, 49, 51, 36; spotlight
@@ -214,6 +216,25 @@ drag events; disconnect, revoke, or drop releases held buttons like held keys. P
 deltas are signed little-endian, unlike record/frame/text IDs. Unknown tags,
 invalid lengths, invalid UTF-8, and invalid command/button/boolean values fail.
 Only key, pointer, and text messages are accepted by the approved input decoder.
+
+Spotlight results mirror (tags 10 and 11). The phone sends `spotlightWatch(1)` when
+its Spotlight overlay opens and `spotlightWatch(0)` when it closes; only an approved
+peer may send it, after the name exchange. While at least one approved peer watches,
+the Mac polls the Accessibility tree of the Spotlight panel (bundle id
+`com.apple.campo`, falling back to `com.apple.Spotlight`) every 0.2 seconds and sends
+`spotlightResults` to each watching peer when the snapshot changed. A snapshot is
+the Mac's typed text plus the visible result titles, top to bottom, at most 8. The
+server truncates typed and each title to 256 UTF-8 bytes on a character boundary.
+Strings may be empty and may contain newlines. `count 0` means nothing to show,
+including when Spotlight closes; the 256-byte cap per string is enforced by the server's truncation, not by the decoder; no panel process or no Accessibility permission also
+yields `count 0`. The decoder rejects counts above 8, lengths past the end, trailing
+bytes, and invalid UTF-8. A snapshot is sent only while that peer's notification
+queue is empty; a skipped one is retried on the next tick with newer data. Watch
+state is cleared on off, disconnect, or revoke, and the Mac then stops reading
+Accessibility for that peer. Compatibility: builds without these tags fail the
+session on an unknown tag, so the phone must not send tag 11 unless the overlay is
+open and the Mac must not send tag 10 to a peer that has not sent watch on; a new
+phone on an old Mac fails when it opts in, so release both apps together.
 
 ## Approval, Trust, and Recovery
 
@@ -328,6 +349,7 @@ endpoints do not resend pending text or provide durable text-ID deduplication.
 | Server peer count | At most 8 subscribed peers, each with independent session/queues |
 | Server notifications per peer | At most 2048 frames and 16384 framed bytes |
 | Server notification stall | 10 seconds without progress |
+| Spotlight results | At most 8 titles; typed and titles at most 256 UTF-8 bytes each |
 | Server handshake through name | 10 seconds idle or 30 seconds from subscription |
 | Server pending approval | 300 seconds |
 | Partial frame assembly | 10 seconds idle or 30 seconds total |
@@ -367,6 +389,9 @@ the iOS export declaration automatically without that review.
 
 The following gates remain open; none is marked complete by a build or cleanup:
 
+- Spotlight results mirror on hardware: the panel host and AX identifiers
+  (`SpotlightSearchField`, `ResultCell`) were found on one macOS version only, and
+  the rows can trail the typed text; test other macOS versions.
 - Physical secure-v2 iPhone/Mac testing, including packet inspection for plaintext
   leakage, MTU fragmentation, sustained backpressure, failures, sleep/wake,
   reconnection, multiple peers, held-key cleanup, and receipt ambiguity.

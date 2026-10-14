@@ -1,3 +1,4 @@
+import RemoteClientCore
 import SwiftUI
 
 /// The design's magnifier, drawn in an 18-unit box and scaled to the frame.
@@ -58,11 +59,20 @@ struct SpotlightOverlay: View {
                 .accessibilityAddTraits(.isModal)
                 .accessibilityAction(named: "Close Spotlight") { close(true) }
 
-            pill
-                .padding(.horizontal, 14)
-                .padding(.top, 70)
+            VStack(spacing: 10) {
+                pill
+                if let results = model.spotlightResults, !results.titles.isEmpty {
+                    ResultsCard(results: results)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 70)
         }
-        .onAppear { isFocused = true }
+        .onAppear {
+            isFocused = true
+            model.setSpotlightOpen(true)
+        }
+        .onDisappear { model.setSpotlightOpen(false) }
     }
 
     private var pill: some View {
@@ -100,5 +110,85 @@ struct SpotlightOverlay: View {
             model.submitSpotlight(text)
             close(false)
         }
+    }
+}
+
+/// The Mac's results as text. Display only: rows have no press state and no action.
+private struct ResultsCard: View {
+    let results: SpotlightResults
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 2) {
+                ForEach(Array(results.titles.enumerated()), id: \.offset) { index, title in
+                    ResultRow(title: title, results: results, isTopHit: index == 0)
+                }
+            }
+            .padding(6)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(maxHeight: 370)
+        .fixedSize(horizontal: false, vertical: true)
+        .background {
+            RoundedRectangle(cornerRadius: 22).fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 22).fill(Color(red: 58 / 255, green: 56 / 255, blue: 55 / 255).opacity(0.82))
+        }
+        .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .shadow(color: .black.opacity(0.4), radius: 15, y: 10)
+    }
+}
+
+private struct ResultRow: View {
+    let title: String
+    let results: SpotlightResults
+    let isTopHit: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title.first.map { String($0).uppercased() } ?? "")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 36, height: 36)
+                .background(
+                    LinearGradient(
+                        colors: [Color(red: 142 / 255, green: 142 / 255, blue: 147 / 255),
+                                 Color(red: 99 / 255, green: 99 / 255, blue: 102 / 255)],
+                        startPoint: .top, endPoint: .bottom),
+                    in: RoundedRectangle(cornerRadius: 9))
+                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(.white.opacity(0.22), lineWidth: 0.5))
+                .accessibilityHidden(true)
+            Text(attributed)
+                .font(.system(size: 17))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if isTopHit {
+                Text("Open")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(red: 235 / 255, green: 235 / 255, blue: 245 / 255).opacity(0.75))
+                    .padding(.horizontal, 9)
+                    .frame(height: 24)
+                    .background(.white.opacity(0.16), in: RoundedRectangle(cornerRadius: 7))
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 12)
+        .frame(minHeight: 52)
+        .background(isTopHit ? Color.white.opacity(0.12) : .clear, in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+    }
+
+    /// Matched characters in semibold, the rest regular.
+    private var attributed: AttributedString {
+        var text = AttributedString(title)
+        text.font = .system(size: 17)
+        for range in results.matchedRanges(in: title) {
+            if let bold = Range(range, in: text) { text[bold].font = .system(size: 17, weight: .semibold) }
+        }
+        return text
     }
 }

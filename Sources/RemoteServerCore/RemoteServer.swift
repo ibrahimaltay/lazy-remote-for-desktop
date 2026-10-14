@@ -50,6 +50,8 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
         var frameCounter: UInt64 = 0
         var held = Set<Command>()
         var heldButtons = Set<MouseButton>()
+        var watchesSpotlight = false
+        var sentSpotlight = SpotlightSnapshot.empty
 
         init(central: CBCentral) {
             self.central = central
@@ -62,6 +64,10 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
     private let injector = KeyInjector()
     private let pointer = PointerInjector()
     private let trust: PeerTrustStore
+    private let spotlightQueue = DispatchQueue(label: "remote.server.spotlight")
+    private let spotlightReader = SpotlightReader()
+    private var spotlightTimer: DispatchSourceTimer?
+    private var spotlightReading = false
     private var deniedKeys = Set<Data>()
     private var deniedIDs = Set<UUID>()
     private var manager: CBPeripheralManager?
@@ -107,6 +113,8 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             self.timer?.cancel()
             self.timer = nil
             self.clearPeers()
+            self.spotlightTimer?.cancel()
+            self.spotlightTimer = nil
             self.manager?.stopAdvertising()
             self.manager?.removeAllServices()
             self.manager = nil
@@ -172,6 +180,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             for peer in affected {
                 if let publicKey = peer.publicKey { self.deniedKeys.insert(publicKey) }
                 peer.approved = false
+                peer.watchesSpotlight = false
                 peer.closing = true
                 peer.controlAssembler.reset()
                 peer.inputAssembler.reset()
@@ -186,6 +195,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
                     self.drop(peer)
                 }
             }
+            self.updateSpotlightPolling()
             if deletionFailed {
                 self.report(.failed("Could not remove saved trust. The device is blocked for this run; retry Forget."))
             }
@@ -201,6 +211,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             for peer in affected { peer.closing = true }
             for peer in affected {
                 peer.approved = false
+                peer.watchesSpotlight = false
                 peer.pendingSince = nil
                 peer.handshake = nil
                 peer.controlAssembler.reset()
@@ -220,6 +231,7 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
                     self.drop(peer)
                 }
             }
+            self.updateSpotlightPolling()
             let result: TrustResetResult
             do {
                 try self.trust.forgetAll()
@@ -360,10 +372,18 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             peer.handshake = nil
             try enqueue(reply, kind: .encryptedControl, to: peer)
         case .encryptedControl:
-            guard var session = peer.session, peer.name == nil, let publicKey = peer.publicKey else {
+            guard var session = peer.session, let publicKey = peer.publicKey else {
                 throw SecureError.wrongPhase
             }
             let message = try SecureMessage(wire: session.open(complete.data, lane: .clientControl))
+            if peer.name != nil {
+                guard peer.approved, case .spotlightWatch(let isOn) = message else { throw SecureError.wrongPhase }
+                peer.session = session
+                peer.watchesSpotlight = isOn
+                peer.sentSpotlight = .empty
+                updateSpotlightPolling()
+                return
+            }
             guard case .name(let name) = message else { throw SecureError.wrongPhase }
             peer.session = session
             peer.name = name
@@ -448,6 +468,50 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
         peer.inputAssembler.reset()
         peer.notifications.removeAll()
         peer.notificationBytes = 0
+        peer.watchesSpotlight = false
+        updateSpotlightPolling()
+    }
+
+    /// Polls only while an approved peer watches; the timer is cancelled otherwise.
+    private func updateSpotlightPolling() {
+        let watching = peers.values.contains { $0.watchesSpotlight && $0.approved && !$0.closing }
+        if !watching {
+            spotlightTimer?.cancel()
+            spotlightTimer = nil
+        } else if spotlightTimer == nil {
+            let timer = DispatchSource.makeTimerSource(queue: queue)
+            timer.schedule(deadline: .now(), repeating: 0.2)
+            timer.setEventHandler { [weak self] in self?.pollSpotlight() }
+            spotlightTimer = timer
+            timer.resume()
+        }
+    }
+
+    private func pollSpotlight() {
+        guard !spotlightReading else { return }
+        spotlightReading = true
+        spotlightQueue.async {
+            let snapshot = self.spotlightReader.read()
+            self.queue.async {
+                self.spotlightReading = false
+                self.deliver(snapshot)
+            }
+        }
+    }
+
+    /// Skips a peer whose queue is busy and leaves its sent state alone, so newer data is retried next tick.
+    private func deliver(_ snapshot: SpotlightSnapshot) {
+        for peer in Array(peers.values)
+        where peer.watchesSpotlight && peer.approved && !peer.closing
+            && peer.notifications.isEmpty && peer.sentSpotlight != snapshot {
+            do {
+                try send(.spotlightResults(typed: snapshot.typed, titles: snapshot.titles), to: peer)
+                peer.sentSpotlight = snapshot
+            } catch {
+                log.error("spotlight send failed phone=\(RemoteLog.id(peer.central.identifier)): \(RemoteLog.describe(error))")
+                fail(peer)
+            }
+        }
     }
 
     private func clearPeers() {
