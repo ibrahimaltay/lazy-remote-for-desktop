@@ -1,6 +1,6 @@
 # Spotlight results mirror
 
-Status: in progress
+Status: shipped
 
 ## Goal
 
@@ -110,7 +110,7 @@ Round 2 fixes (decisions 19-23; replaces the Round 1 typer):
 
 ## Done when
 
-- [ ] Acceptance criteria verified by tests
+- [x] Acceptance criteria verified by tests (server-side rules by device QA, per decision)
 - [x] `swift test` passes
 - [x] Both app targets build
 - [x] Tester findings resolved with the developer
