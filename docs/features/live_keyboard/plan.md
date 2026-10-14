@@ -28,6 +28,7 @@ No design changes, therefore no inputs.
 | 12 | Disconnect/reconnect | Replay pending edits; re-baseline without sending | Re-baseline, never replay | Edits are not idempotent; matches the no-retry rule. *Proposed* |
 | 13 | Release | iphone / mac / both | both | Mac must understand tag 13 |
 | 15 | Backspace and Return buttons beside the field (from QA) | Keep; remove | Remove both | User choice. The keyboard's Return key presses Return on the Mac and backspace in an empty field deletes on the Mac, so the buttons duplicate them |
+| 16 | Send button (from QA) | Send button only; both Return and Send reset; Return only | Add a Send button beside the field that presses Return on the Mac, then clears the phone field and re-baselines. Keyboard Return is unchanged (keeps the text) | User choice. After a command or message is sent the Mac input is consumed but the phone kept its text; Send resets it. Nothing else changes |
 | 14 | Phone cursor (supersedes 5, from QA) | Clear field on cursor move; lock cursor to end; retype tail; select-all replace; mirror with arrows | Lock the phone cursor to the end of the text | Tapping mid-text cleared the phone but not the Mac, so they differed. Locking keeps the cursor equal to the Mac's; no wire change. Typos are fixed by backspacing. Reset stays as a safety net |
 
 ## Scope

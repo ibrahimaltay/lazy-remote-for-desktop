@@ -13,6 +13,16 @@ struct TextInputBar: View {
                     Color(.systemGray5),
                     in: RoundedRectangle(cornerRadius: 20, style: .continuous)
                 )
+
+            Button(action: model.sendText) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color.primary)
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(Color(.systemGray5)))
+            }
+            .accessibilityLabel("Send")
+            .disabled(!model.isConnected)
         }
         .animation(.easeOut(duration: 0.2), value: isFocused)
         .padding(.horizontal, 20)

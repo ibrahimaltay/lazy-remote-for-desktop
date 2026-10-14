@@ -209,6 +209,12 @@ final class RemoteViewModel {
     /// The phone field was cleared or replaced locally; send nothing.
     func resetText() { liveText.reset() }
 
+    /// Presses Return on the Mac, then clears the phone field (nothing is resent).
+    func sendText() {
+        tap(.enter)
+        textResetCount += 1
+    }
+
     /// Sets the Mac's Spotlight field to the overlay's query.
     func typeSpotlight(_ query: String) {
         spotlight.update(query)
