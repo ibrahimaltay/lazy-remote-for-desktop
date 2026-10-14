@@ -8,8 +8,9 @@ When the phone's Spotlight overlay is open and the user types, the overlay lists
 
 ## Design inputs
 
-- None yet. The shipped overlay design ([spotlight_search_design_update](../spotlight_search_design_update/design.md)) has no results list.
-- Deviations from the design: n/a. The results list is a minimal text list under the pill, styled with the overlay's existing fonts and colours, until a design exists (see Open questions).
+- [Spotlight Results.html](Spotlight%20Results.html) and [design.md](design.md), as downloaded and never edited. They build on the shipped overlay ([spotlight_search_design_update](../spotlight_search_design_update/design.md)): scrim, pill and keyboard are unchanged.
+- Replicate them exactly; the values live in design.md, not here. Card fill blur 30 is approximated with `.ultraThinMaterial` under the fill, as the pill is.
+- Deviations from the design: the design shows tapping a row (pressed fill, then Spotlight closes). Tap is out of scope here, so rows have no press state and no action (see Open questions 4 and 6).
 
 ## Decisions
 
@@ -89,6 +90,7 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 1. **Row races.** The spike showed rows can trail the typed text ("pho" showed "ph" results, "l" showed "photos" results). Mirrored faithfully, but the phone is also ahead over BLE. Judge in device QA; the fix is to tag rows with the typed text.
 2. **Settled indicator.** Does the phone need a spinner or dimmed list while rows are stale? Needs the same typed-text tagging.
 3. **OS fragility.** The panel host (`com.apple.campo`) and AX identifiers (`SpotlightSearchField`, `ResultCell`) were found on this macOS only. Test on another macOS version before shipping.
-4. **Design.** The results list needs a design pass before release.
+4. **Filter or highlight.** The design hides the card when "no row's word starts with the query" and bolds the matched part. The Mac's list can contain rows that fail that rule (spike: "lol" returned a LinkedIn notification title). Decide: show every row the Mac sends and only bold matches (mirrors the Mac, my default), or drop non-matching rows (matches the design's "no matches" state, but hides what the Mac shows).
 5. **Rows below the fold.** AX exposes only ~8 rows; showing more needs scroll handling.
-6. **Tap to open.** When added, tap needs a snapshot sequence so a tap maps to the row the user saw.
+6. **Tap to open.** The design already includes row tap (pressed fill, closes Spotlight). It is out of scope here; when added, tap needs a snapshot sequence so a tap maps to the row the user saw.
+7. **Design rows vs Mac rows.** The design card scrolls for "many matches"; the wire caps at 20 rows. The "Open" tag on the first row marks the top hit; the Mac's first row is the top hit, so it needs no extra field.
