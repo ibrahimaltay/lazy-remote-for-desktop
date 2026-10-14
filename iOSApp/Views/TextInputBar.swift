@@ -106,7 +106,8 @@ private struct LiveTextField: UIViewRepresentable {
                 context.coordinator.lastFocused = field.becomeFirstResponder()
             } else {
                 context.coordinator.lastFocused = false
-                field.resignFirstResponder()
+                // Deferred: resigning inside the view update leaves SwiftUI's keyboard inset stale.
+                DispatchQueue.main.async { field.resignFirstResponder() }
             }
         }
         // Disconnect or reconnect: the Mac's text is unknown, so start empty.
