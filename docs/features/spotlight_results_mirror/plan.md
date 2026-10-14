@@ -114,7 +114,7 @@ Round 2 fixes (decisions 19-23; replaces the Round 1 typer):
 - [x] `swift test` passes
 - [x] Both app targets build
 - [x] Tester findings resolved with the developer
-- [ ] Last QA round: every acceptance criterion passes on device, no open issues
+- [x] Last QA round: every acceptance criterion passes on device, no open issues
 - [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
 
 ## QA log
@@ -125,9 +125,9 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 
 | Round | Build | Issue | Severity | Routed to | Status |
 |-------|-------|-------|----------|-----------|--------|
-| 1 | 2.0 (13) | Spotlight query is only sent to the Mac on "go"/Enter, but results are now live, so the Mac only searches after the whole word is sent. Expected: every keystroke typed in the phone's Spotlight overlay reaches the Mac's Spotlight live, for the Spotlight overlay only, not the general keyboard. (User-reported, device QA) | Major | architect (behavior change) | open |
-| 1 | 2.0 (13) | When Spotlight opens on the Mac it sometimes shows leftover text from the previous search; the phone field is empty so the phone shows results for text the user never typed. (User-reported, device QA) | Major | architect | open |
-| 2 | 2.0 (14) | Mac and phone text drift apart while typing live: Spotlight's inline completion suffix (e.g. 'chrome' + selected '— Google Chrome') swallows the first Backspace on the Mac, while the phone deletes a letter, so the two stay one letter apart (turning off Show all filename extensions does not help). Spike showed the Mac can set the search field value via Accessibility and the search re-runs. (User-reported, device QA) | Major | architect (design change: set the field value instead of replaying keystrokes) | open |
+| 1 | 2.0 (13) | Spotlight query is only sent to the Mac on "go"/Enter, but results are now live, so the Mac only searches after the whole word is sent. Expected: every keystroke typed in the phone's Spotlight overlay reaches the Mac's Spotlight live, for the Spotlight overlay only, not the general keyboard. (User-reported, device QA) | Major | architect (behavior change) | fixed (build 2.0 (15)) |
+| 1 | 2.0 (13) | When Spotlight opens on the Mac it sometimes shows leftover text from the previous search; the phone field is empty so the phone shows results for text the user never typed. (User-reported, device QA) | Major | architect | fixed (build 2.0 (15)) |
+| 2 | 2.0 (14) | Mac and phone text drift apart while typing live: Spotlight's inline completion suffix (e.g. 'chrome' + selected '— Google Chrome') swallows the first Backspace on the Mac, while the phone deletes a letter, so the two stay one letter apart (turning off Show all filename extensions does not help). Spike showed the Mac can set the search field value via Accessibility and the search re-runs. (User-reported, device QA) | Major | architect (design change: set the field value instead of replaying keystrokes) | fixed (build 2.0 (15)) |
 
 ## Open questions
 
