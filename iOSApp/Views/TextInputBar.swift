@@ -25,10 +25,10 @@ struct TextInputBar: View {
             .accessibilityLabel("Send")
             .opacity(model.isConnected ? 1 : 0.5)
             .disabled(!model.isConnected)
-            .transition(.opacity)
             }
         }
-        .animation(.easeOut(duration: 0.2), value: isFocused)
+        // No animation: Send appears in place while the bar rises with the keyboard.
+        .transaction { $0.animation = nil }
         .padding(.horizontal, 20)
         .padding(.top, 4)
         .padding(.bottom, 12)
