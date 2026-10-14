@@ -202,9 +202,9 @@ def magnifier(at, size, ring, handle, color, opacity=1.0, scale=S):
     return m.VGroup(ring_m, line)
 
 
-def trackpad(phone):
+def trackpad(phone, bar_h=INPUT_H):
     """TrackpadView: systemGray5 surface, corner 28, 20 pt side / 14 pt bottom padding, no hint text (removed in ebb6f57)."""
-    top, bottom = HEADER_BOTTOM, IDLE_BAR_BOTTOM - INPUT_H - 14
+    top, bottom = HEADER_BOTTOM, IDLE_BAR_BOTTOM - bar_h - 14
     pad = phone.rect(20, top, PH_W - 20, bottom, 28, GRAY5)
     g = m.VGroup(pad)
     g.center_pt = (PH_W / 2, (top + bottom) / 2)
@@ -250,6 +250,63 @@ def typed_field(phone, text, bottom, caret=True):
     return g
 
 
+# Live text bar (live_keyboard, 2026-10-15). The old `input_bar` / `typed_field` stay for the scenes
+# rendered before it (they still show the removed delete.left / return buttons until re-rendered).
+LIVE_INPUT_H = 60                         # TextInputBar: 44 pt field + 4 top / 12 bottom padding
+
+
+def live_input_bar(phone, focused=False, bottom=IDLE_BAR_BOTTOM):
+    """TextInputBar.swift (live): systemGray5 field (min 44, corner 20, 16 pt text inset), "Type to send…";
+    42 pt #0A84FF arrow.up Send, 10 pt leading gap, only while focused, bottom-aligned with the field."""
+    y = bottom - 12 - 22
+    right = PH_W - 20
+    field_right = right - 52 if focused else right
+    g = m.Group(phone.rect(20, y - 22, field_right, y + 22, 20, GRAY5))
+    g.field_left = phone.pt(36, y)
+    g.placeholder = T("Type to send…", 17, TERTIARY).move_to(g.field_left, aligned_edge=m.LEFT)
+    g.add(g.placeholder)
+    if focused:
+        sy = bottom - 12 - 21
+        g.send = circle(42 * S, ACCENT, at=phone.pt(right - 21, sy))
+        g.add(g.send, symbol("arrow.up", 17, WHITE, "semibold", at=phone.pt(right - 21, sy)))
+    return g
+
+
+def live_typed_field(phone, text, bottom):
+    """Text in the focused live field with the accent caret after it (UITextField keeps the placeholder when empty)."""
+    y = bottom - 12 - 22
+    x = phone.pt(36, y)
+    g = m.Group()
+    if text:
+        t = rich_text(text, 17).move_to(x, aligned_edge=m.LEFT)
+        g.add(t)
+        x = t.get_right() + P(0.045, 0)
+    else:
+        g.add(T("Type to send…", 17, TERTIARY).move_to(x, aligned_edge=m.LEFT))
+    g.add(m.Rectangle(width=2 * S, height=22 * S, fill_color=ACCENT, fill_opacity=1, stroke_width=0).move_to(x))
+    return g
+
+
+def fade_to(group, k):
+    """SwiftUI .opacity(k) on a whole view: scales every part's own opacity (fill, stroke, image) to k times its start."""
+    parts = [s for s in group.get_family() if not s.submobjects]   # leaves only: a parent would overwrite them
+    for s in parts:
+        if not hasattr(s, "alpha0"):
+            s.alpha0 = (s.get_fill_opacity(), s.get_stroke_opacity())
+    start = getattr(group, "alpha_k", 1.0)
+
+    def update(_, a):
+        v = start + (k - start) * a
+        for s in parts:
+            if isinstance(s, m.VMobject):
+                s.set_fill(opacity=s.alpha0[0] * v)
+                s.set_stroke(opacity=s.alpha0[1] * v)
+            else:
+                s.set_opacity(s.alpha0[0] * v)
+        group.alpha_k = v
+    return m.UpdateFromAlphaFunc(group, update)
+
+
 def scrim(phone):
     """RootView.scrim: black 0.4 over the header and trackpad while typing."""
     return phone.rect(0, SAFE_TOP, PH_W, PH_H - SAFE_BOTTOM, 0, "#000000", 0.4)
@@ -275,11 +332,11 @@ def keyboard(phone, return_label="return"):
         g.add(phone.rect(x - 21, y - kh / 2, x + 21, y + kh / 2, 5, "#464649"), symbol(sym, 17, WHITE, at=phone.pt(x, y)))
     y += pitch
     g.add(phone.rect(3, y - kh / 2, 90, y + kh / 2, 5, "#464649"), T("123", 15).move_to(phone.pt(47, y)),
-          phone.rect(96, y - kh / 2, 297, y + kh / 2, 5, "#6B6B6E"), T("space", 15).move_to(phone.pt(196, y)),
+          (space := phone.rect(96, y - kh / 2, 297, y + kh / 2, 5, "#6B6B6E")), T("space", 15).move_to(phone.pt(196, y)),
           (ret := phone.rect(303, y - kh / 2, PH_W - 3, y + kh / 2, 5, ACCENT if return_label == "go" else "#464649")),
           T(return_label, 15).move_to(phone.pt(347, y)),
           symbol("globe", 22, WHITE, at=phone.pt(36, PH_H - 52)), symbol("mic", 22, WHITE, at=phone.pt(PH_W - 36, PH_H - 52)))
-    g.keys["return"] = ret
+    g.keys["return"], g.keys[" "] = ret, space
     return g
 
 
@@ -706,10 +763,13 @@ def video_player(mac, movie=1):
     return g
 
 
-def remote_screen(phone, docked=False):
-    """RootView idle: header, trackpad, TextInputBar and the FloatingRemoteButton. Parts as attributes."""
+def remote_screen(phone, docked=False, live=False):
+    """RootView idle: header, trackpad, TextInputBar and the FloatingRemoteButton. Parts as attributes.
+    live=True draws the live text bar (live_keyboard); False keeps the old bar for scenes rendered before it."""
     g = m.Group()
-    g.header, g.pad, g.bar = header(phone), trackpad(phone), input_bar(phone)
+    g.header = header(phone)
+    g.pad = trackpad(phone, LIVE_INPUT_H) if live else trackpad(phone)
+    g.bar = live_input_bar(phone) if live else input_bar(phone)
     g.button = remote_button(phone, DOCK if docked else FLOAT_HOME, docked)
     g.add(g.header, g.pad, g.bar, g.button)
     return g
@@ -741,6 +801,38 @@ def close_keyboard(scene, phone, screen, kb, bar, run_time=0.3):
                run_time=run_time, rate_func=m.ease_in_out_cubic)
     scene.remove(kb, bar, kb.scrim)
     scene.add(screen.button)
+
+
+def open_live_keyboard(scene, phone, screen, run_time=0.25):
+    """RootView + TextInputBar (live): scrim fades in (0.2 s), bar rides up with the keyboard, Send fades in,
+    remote button stays put at 40% opacity under the keyboard. Returns (keyboard, focused bar)."""
+    kb = keyboard(phone)
+    bottom = PH_H - KB_H
+    bar = live_input_bar(phone, True, bottom)
+    bar.remove(bar.placeholder)                             # the scene draws the field text (live_typed_field)
+    send = m.Group(*bar[-2:])                               # Send fades in while it rides up (opacity eases with focus)
+    bar.remove(*bar[-2:])
+    rise = P(0, (IDLE_BAR_BOTTOM - bottom) * S)
+    kb.shift(P(0, -KB_H * S))
+    bar.shift(-rise)
+    sc = scrim(phone).set_opacity(0)
+    scene.remove(screen.button)
+    scene.add(sc, screen.button, bar, kb)                   # button above the scrim, the system keyboard above all
+    scene.play(sc.animate.set_fill(opacity=0.4), m.FadeOut(screen.bar), m.FadeIn(send, shift=rise),
+               kb.animate.shift(P(0, KB_H * S)), bar.animate.shift(rise),
+               fade_to(screen.button, 0.4), run_time=run_time, rate_func=m.ease_out_cubic)
+    scene.remove(screen.bar, send)
+    bar.add(*send)
+    kb.scrim = sc
+    return kb, bar
+
+
+def close_live_keyboard(scene, phone, screen, kb, bar, run_time=0.25):
+    """Unfocus the live bar: keyboard and bar slide down, Send and scrim fade, remote button back to full opacity."""
+    scene.play(kb.animate.shift(P(0, -KB_H * S)), bar.animate.shift(P(0, (PH_H - KB_H - IDLE_BAR_BOTTOM) * S)).set_opacity(0),
+               m.FadeOut(kb.scrim), m.FadeIn(screen.bar), fade_to(screen.button, 1.0),
+               run_time=run_time, rate_func=m.ease_in_out_cubic)
+    scene.remove(kb, bar, kb.scrim)
 
 
 # ---------------------------------------------------------------- Spotlight overlay (iOSApp/Views/SpotlightOverlay.swift)

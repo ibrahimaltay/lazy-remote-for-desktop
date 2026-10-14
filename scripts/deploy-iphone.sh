@@ -8,10 +8,13 @@ cd "$(dirname "$0")/.."
 BUNDLE_ID="com.altay.lazyremote"
 DERIVED=".build/ios"
 
-DEVICE="${DEVICE:-$(xcrun devicectl list devices 2>/dev/null | grep -E 'connected +iPhone|connected.*physical' \
-  | grep -oE '[0-9A-F]{8}-[0-9A-F]{16}|[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1)}"
+if [[ -z "${DEVICE:-}" ]]; then
+  # '|| true' so a no-match grep reaches our own error below instead of exiting silently.
+  DEVICE=$(xcrun devicectl list devices 2>/dev/null | grep -E 'iPhone' | grep -E '(connected|available)' \
+    | grep -oE '[0-9A-F]{8}-[0-9A-F]{16}|[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}' | head -1 || true)
+fi
 if [[ -z "$DEVICE" ]]; then
-  echo "No connected physical iPhone found. Plug it in, unlock it and tap Trust."
+  echo "No connected or paired physical iPhone found. Plug it in, unlock it and tap Trust."
   exit 1
 fi
 echo "Deploying to device $DEVICE"

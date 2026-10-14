@@ -63,7 +63,7 @@ two disagree whether something is a bug, STOP and ask the user.
 two disagree whether code or test is wrong, STOP and ask the user. Tick the "Done
 when" boxes the tester verified.
 
-**Deploy.** Invoke `deployer` to install on the iPhone (and build the DMG if the
+**Deploy.** Invoke `deployer` to install on the iPhone (and build and install the Mac app if the
 Mac app is affected). Pushing a `feature/*` branch is pre-authorized. Then STOP
 and hand over: what was installed and what to check. Wait for the user's verdict.
 Do not continue on your own.

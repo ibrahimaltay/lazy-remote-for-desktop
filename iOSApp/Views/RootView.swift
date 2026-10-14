@@ -6,7 +6,7 @@ struct RootView: View {
     @State private var confirmsForget = false
     @State private var inputBarHeight: CGFloat = 0
     @State private var isSpotlight = false
-    @FocusState private var isTyping: Bool
+    @State private var isTyping = false
     @AppStorage("remoteFab.docked") private var isRemoteDocked = false
     @State private var isDPadOpen = false
     @State private var dockCenter = CGPoint.zero
@@ -36,13 +36,16 @@ struct RootView: View {
                 }
                 .blur(radius: isSpotlight ? 14 : 0)
 
-            if !isTyping && !isSpotlight {
+            if !isSpotlight {
                 FloatingRemoteButton(
                     model: model, isDocked: $isRemoteDocked, dock: dockCenter,
                     headerBottom: headerBottom, inputBarHeight: inputBarHeight
                 ) {
                     withAnimation(.easeOut(duration: 0.2)) { isDPadOpen = true }
                 }
+                // While typing it stays put, dimmed, and lets taps fall through to the scrim.
+                .opacity(isTyping ? 0.4 : 1)
+                .allowsHitTesting(!isTyping)
             }
 
             if isDPadOpen {

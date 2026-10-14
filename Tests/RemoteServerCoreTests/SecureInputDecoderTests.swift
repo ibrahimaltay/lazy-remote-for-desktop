@@ -62,4 +62,15 @@ final class SecureInputDecoderTests: XCTestCase {
         let valid = try client.seal(pointer.encoded(), lane: .clientInput)
         XCTAssertEqual(try SecureInputDecoder.decode(valid, session: &server, approved: true), pointer)
     }
+
+    func testTextEditAcceptedOnInputLaneOnly() throws {
+        var (client, server) = try sessions()
+        let edit = SecureMessage.textEdit(delete: 2, insert: "ok\n")
+        let valid = try client.seal(edit.encoded(), lane: .clientInput)
+        XCTAssertEqual(try SecureInputDecoder.decode(valid, session: &server, approved: true), edit)
+        let control = try client.seal(edit.encoded(), lane: .clientControl)
+        XCTAssertThrowsError(try SecureInputDecoder.decode(control, session: &server, approved: true))
+        let bad = try client.seal(Data([13, 0, 0]), lane: .clientInput)
+        XCTAssertThrowsError(try SecureInputDecoder.decode(bad, session: &server, approved: true))
+    }
 }

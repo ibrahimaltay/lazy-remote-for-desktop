@@ -196,6 +196,7 @@ strings occupy the remaining bytes as nonempty valid UTF-8, without a length fie
 | 10 spotlightResults | count1 (0..8) + typed + count titles, each `len2 (UInt16BE) + UTF-8` | 4..2324 | serverControl |
 | 11 spotlightWatch | isOn1 (0 or 1) | 2 | clientControl |
 | 12 spotlightQuery | UTF-8 (0..256 bytes) | 1..257 | clientInput |
+| 13 textEdit | deleteCount2 (UInt16 BE, 0..4096) + UTF-8 insert (0..4096 bytes), not both empty | 3..4099 | clientInput |
 
 Commands are up=0, down=1, left=2, right=3, mid/Space=4, backspace=5, enter=6,
 spotlight=7. Mac keycodes are respectively 126, 125, 123, 124, 49, 51, 36; spotlight
@@ -216,7 +217,7 @@ Ctrl+←, Ctrl+↑, Ctrl+↓. While a peer holds a button down, its moves are po
 drag events; disconnect, revoke, or drop releases held buttons like held keys. Pointer
 deltas are signed little-endian, unlike record/frame/text IDs. Unknown tags,
 invalid lengths, invalid UTF-8, and invalid command/button/boolean values fail.
-Only key, pointer, text, and spotlightQuery messages are accepted by the approved input decoder. Tag 12 is the one string that may be empty (it clears the Mac's Spotlight field) and has no length prefix; the decoder rejects over 256 bytes and invalid UTF-8, and tag 12 on the control lane fails with `wrongPhase`.
+Only key, pointer, text, textEdit, and spotlightQuery messages are accepted by the approved input decoder. Tag 12 is the one string that may be empty (it clears the Mac's Spotlight field) and has no length prefix; the decoder rejects over 256 bytes and invalid UTF-8, and tag 12 on the control lane fails with `wrongPhase`.
 
 Spotlight results mirror (tags 10 and 11). The phone sends `spotlightWatch(1)` when
 its Spotlight overlay opens and `spotlightWatch(0)` when it closes; only an approved
@@ -250,6 +251,16 @@ events are ever used. The phone presses Enter for "go" once the Mac's `typed` eq
 query and no new snapshot arrived for 0.3 seconds, or after 2 seconds anyway. Builds
 13 and 14 keep working against a new Mac; a new phone on a Mac without tag 12 fails
 the session when it opens the overlay.
+
+Text edit (tag 13). Live typing: the phone diffs its text field against what it last sent
+and sends the change as an edit at the end of the Mac's focused text. The Mac presses
+Backspace `deleteCount` times, then types the insert string like tag 3 (a newline presses
+Return). Fire-and-forget: no receipt, never replayed or retried; the phone re-baselines
+without sending on reconnect, cursor move, or close. Counts are characters (grapheme
+clusters); a few apps delete complex emoji per code point. The decoder rejects a delete
+count over 4096 or an insert over 4096 bytes (`oversized`), an empty edit or invalid UTF-8
+(`malformed`), and tag 13 on the control lane (`wrongPhase`). A Mac without tag 13 fails
+the session on the unknown tag, so release both apps together.
 
 ## Approval, Trust, and Recovery
 
