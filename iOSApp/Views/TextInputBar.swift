@@ -98,8 +98,16 @@ private struct LiveTextField: UIViewRepresentable {
 
     func updateUIView(_ field: BackspaceField, context: Context) {
         context.coordinator.parent = self
-        if isFocused != field.isFirstResponder {
-            if isFocused { field.becomeFirstResponder() } else { field.resignFirstResponder() }
+        // Act only when the binding changes: the delegate writes it back asynchronously, so a stale
+        // `false` seen mid-focus must not resign the field the user just tapped.
+        if isFocused != context.coordinator.lastFocused {
+            if isFocused {
+                // Stay unacked on failure (e.g. not in a window yet) so the next update retries.
+                context.coordinator.lastFocused = field.becomeFirstResponder()
+            } else {
+                context.coordinator.lastFocused = false
+                field.resignFirstResponder()
+            }
         }
         // Disconnect or reconnect: the Mac's text is unknown, so start empty.
         if !model.isConnected || context.coordinator.resetCount != model.textResetCount {
@@ -146,6 +154,7 @@ private struct LiveTextField: UIViewRepresentable {
     final class Coordinator: NSObject, UITextFieldDelegate {
         var parent: LiveTextField
         var resetCount = 0
+        var lastFocused = false
 
         init(_ parent: LiveTextField) { self.parent = parent }
 
