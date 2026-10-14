@@ -115,7 +115,7 @@ Round 2 fixes (decisions 19-23; replaces the Round 1 typer):
 - [x] Both app targets build
 - [x] Tester findings resolved with the developer
 - [x] Last QA round: every acceptance criterion passes on device, no open issues
-- [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
+- [x] Marketer has reviewed the promo GIFs for this feature (after QA passes)
 
 ## QA log
 

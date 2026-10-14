@@ -34,9 +34,9 @@ Type on your iPhone and send the text straight to your Mac, in any language, emo
 
 ### Spotlight
 
-Tap the magnifier, type your search, and press go to open the top result on your Mac.
+Tap the magnifier and type. Your Mac's Spotlight results show up on your iPhone as you type; press go to open the top one.
 
-![Opening Spotlight on the Mac from the iPhone, searching for Safari and opening it](readme-gifs/spotlight.gif)
+![Searching Spotlight on the Mac from the iPhone, with the results listed on the phone, and opening Photos](readme-gifs/spotlight.gif)
 
 ## Features
 
@@ -46,7 +46,7 @@ Tap the magnifier, type your search, and press go to open the top result on your
 - **Gestures:** two-finger scroll with momentum, long-press to drag, and three-finger swipe for desktops and Mission Control.
 - **Keyboard:** type on your iPhone and send the text straight to your Mac.
 - **Any language and emoji:** send text in any script, emoji included.
-- **Spotlight:** opens Spotlight on your Mac by sending ⌘ Space, then type your search from the iPhone. Press go to open the top result, or tap outside to cancel. A custom Spotlight shortcut isn't supported.
+- **Spotlight:** opens Spotlight on your Mac by sending ⌘ Space, then type your search from the iPhone. Results appear on your iPhone as you type (view only). Press go to open the top result, or tap outside to cancel. A custom Spotlight shortcut isn't supported.
 - **Direct and encrypted:** connects over Bluetooth, with no Wi-Fi setup or accounts.
 - **Free:** no ads, no tracking, no in-app purchases.
 
