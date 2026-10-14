@@ -6,14 +6,7 @@ import UIKit
 @MainActor
 @Observable
 final class RemoteViewModel {
-    enum TextStatus: Equatable {
-        case sending
-        case sent
-        case failed
-    }
-
     private(set) var status: RemoteClient.Status = .stopped
-    private(set) var textStatus: TextStatus?
     /// What the Mac's Spotlight shows; nil unless the overlay is open.
     private var spotlightResults: SpotlightResults?
     /// The list to draw: only for a non-empty query the Mac has caught up with. Keeps the
@@ -23,7 +16,9 @@ final class RemoteViewModel {
     private let client = RemoteClient()
     private let tuning = TrackpadTuning.bundled
     private let haptics = UIImpactFeedbackGenerator(style: .rigid)
-    private var textStatusReset: Task<Void, Never>?
+    /// Bumped when the phone field must be cleared because an edit was dropped.
+    private(set) var textResetCount = 0
+    @ObservationIgnored private var liveText = LiveTextSync()
     private var isSpotlightOpen = false
     /// Set when the overlay closed while "go" was pending; watch-off waits for the Enter.
     private var closeAfterGo = false
@@ -70,11 +65,11 @@ final class RemoteViewModel {
                 UIApplication.shared.isIdleTimerDisabled = self.isConnected
             }
         }
-        client.onTextDelivered = { [weak self] delivered in
+        client.onTextEditDropped = { [weak self] in
             // RemoteClient always reports on the main queue.
             MainActor.assumeIsolated {
-                guard let self else { return }
-                self.show(delivered ? .sent : .failed)
+                self?.liveText.reset()
+                self?.textResetCount += 1
             }
         }
         client.onSpotlightResults = { [weak self] results in
@@ -198,16 +193,21 @@ final class RemoteViewModel {
         client.press(.left, isDown: false)
     }
 
-    @discardableResult
-    func send(text: String) -> Bool {
-        guard textStatus != .sending else { return false }
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isConnected, !trimmed.isEmpty else { return false }
-        haptics.impactOccurred()
-        show(.sending)
-        client.send(text: trimmed)
-        return true
+    /// The phone field's text changed: mirror the difference on the Mac, live.
+    func textChanged(_ text: String) {
+        guard isConnected else { return liveText.reset(to: text) }
+        for edit in liveText.update(text) { client.sendEdit(delete: edit.delete, insert: edit.insert) }
     }
+
+    /// Backspace in an empty phone field still deletes on the Mac.
+    func emptyBackspace() {
+        guard isConnected else { return }
+        let edit = liveText.emptyBackspace()
+        client.sendEdit(delete: edit.delete, insert: edit.insert)
+    }
+
+    /// The phone field was cleared or replaced locally; send nothing.
+    func resetText() { liveText.reset() }
 
     /// Sets the Mac's Spotlight field to the overlay's query.
     func typeSpotlight(_ query: String) {
@@ -232,18 +232,6 @@ final class RemoteViewModel {
             spotlightCard = nil
         } else if let results = spotlightResults, results.typed == spotlight.query {
             spotlightCard = results
-        }
-    }
-
-    private func show(_ status: TextStatus) {
-        textStatus = status
-        textStatusReset?.cancel()
-        guard status != .sending else { return }
-
-        textStatusReset = Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            guard !Task.isCancelled else { return }
-            textStatus = nil
         }
     }
 }

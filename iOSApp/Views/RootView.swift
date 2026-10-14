@@ -6,7 +6,7 @@ struct RootView: View {
     @State private var confirmsForget = false
     @State private var inputBarHeight: CGFloat = 0
     @State private var isSpotlight = false
-    @FocusState private var isTyping: Bool
+    @State private var isTyping = false
     @AppStorage("remoteFab.docked") private var isRemoteDocked = false
     @State private var isDPadOpen = false
     @State private var dockCenter = CGPoint.zero

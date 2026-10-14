@@ -13,9 +13,12 @@ public enum SecureMessage: Sendable, Equatable {
     case spotlightResults(typed: String, titles: [String])
     case spotlightWatch(Bool)
     case spotlightQuery(String)
+    case textEdit(delete: Int, insert: String)
 
     public static let maxSpotlightRows = 8
     public static let maxSpotlightQueryBytes = 256
+    public static let maxTextEditDelete = 4096
+    public static let maxTextEditInsertBytes = 4096
 
     public func encoded() throws -> Data {
         switch self {
@@ -45,6 +48,12 @@ public enum SecureMessage: Sendable, Equatable {
             // Unlike other strings, empty is valid: it clears the Mac's field.
             guard query.utf8.count <= Self.maxSpotlightQueryBytes else { throw SecureWireError.oversized }
             return Data([12]) + Data(query.utf8)
+        case .textEdit(let delete, let insert):
+            let bytes = Data(insert.utf8)
+            guard delete >= 0, delete <= Self.maxTextEditDelete,
+                  bytes.count <= Self.maxTextEditInsertBytes else { throw SecureWireError.oversized }
+            guard delete > 0 || !bytes.isEmpty else { throw SecureWireError.malformed }
+            return Data([13, UInt8(delete >> 8), UInt8(delete & 0xff)]) + bytes
         }
     }
 
@@ -100,6 +109,14 @@ public enum SecureMessage: Sendable, Equatable {
             guard bytes.count <= 1 + Self.maxSpotlightQueryBytes else { throw SecureWireError.oversized }
             guard let value = String(data: payload, encoding: .utf8) else { throw SecureWireError.malformed }
             self = .spotlightQuery(value)
+        case 13:
+            guard bytes.count >= 3 else { throw SecureWireError.malformed }
+            let delete = Int(bytes[1]) << 8 | Int(bytes[2])
+            guard delete <= Self.maxTextEditDelete, bytes.count - 3 <= Self.maxTextEditInsertBytes
+            else { throw SecureWireError.oversized }
+            guard delete > 0 || bytes.count > 3,
+                  let insert = String(bytes: bytes[3...], encoding: .utf8) else { throw SecureWireError.malformed }
+            self = .textEdit(delete: delete, insert: insert)
         default:
             throw SecureWireError.malformed
         }

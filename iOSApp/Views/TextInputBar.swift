@@ -2,16 +2,13 @@ import SwiftUI
 
 struct TextInputBar: View {
     let model: RemoteViewModel
-    @FocusState.Binding var isFocused: Bool
+    @Binding var isFocused: Bool
 
-    @State private var draft = ""
     @State private var repeatTask: Task<Void, Never>?
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            TextField(text: $draft, prompt: prompt, axis: .vertical) {}
-                .lineLimit(1...5)
-                .focused($isFocused)
+            LiveTextField(model: model, isFocused: $isFocused)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 11)
                 .background(
@@ -22,44 +19,14 @@ struct TextInputBar: View {
             backspaceButton
 
             enterButton
-
-            if isFocused {
-                Button(action: send) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 42, height: 42)
-                        .background(Circle().fill(canSend ? Color.accentColor : Color(.systemGray4)))
-                }
-                .disabled(!canSend)
-            }
-        }
-        // Floats above the field so a status change never resizes the controls.
-        .overlay(alignment: .topTrailing) {
-            confirmation
-                .alignmentGuide(.top) { $0[.bottom] + 8 }
         }
         .animation(.easeOut(duration: 0.2), value: isFocused)
-        .animation(.easeOut(duration: 0.2), value: canSend)
-        .animation(.easeOut(duration: 0.2), value: model.textStatus)
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .onChange(of: isFocused) { _, focused in
             if !focused { stopDeleting() }
         }
-        .onChange(of: model.textStatus) { _, status in
-            if status == .sent { draft = "" }
-        }
         .onDisappear(perform: stopDeleting)
-    }
-
-    private var prompt: Text {
-        Text("Type to send…")
-    }
-
-    private func send() {
-        model.send(text: draft)
-        isFocused = false
     }
 
     /// Deletes on the Mac, not in the draft above it — the system keyboard already
@@ -108,33 +75,89 @@ struct TextInputBar: View {
         repeatTask?.cancel()
         repeatTask = nil
     }
+}
 
-    private var canSend: Bool {
-        model.isConnected && model.textStatus != .sending
-            && draft.utf8.count <= 4096
-            && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+/// Mirrors each change of its text to the Mac. Thin shell: the diffing lives in `LiveTextSync`.
+private struct LiveTextField: UIViewRepresentable {
+    let model: RemoteViewModel
+    @Binding var isFocused: Bool
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> BackspaceField {
+        let field = BackspaceField()
+        field.delegate = context.coordinator
+        field.placeholder = "Type to send…"
+        field.returnKeyType = .send
+        field.font = .preferredFont(forTextStyle: .body)
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.onEmptyBackspace = { [model] in model.emptyBackspace() }
+        field.addTarget(context.coordinator, action: #selector(Coordinator.changed), for: .editingChanged)
+        return field
     }
 
-    @ViewBuilder
-    private var confirmation: some View {
-        switch model.textStatus {
-        case .failed:
-            label("Not confirmed", symbol: "exclamationmark.triangle", tint: .red)
-        case .sent, .sending, nil:
-            EmptyView()
+    func updateUIView(_ field: BackspaceField, context: Context) {
+        context.coordinator.parent = self
+        if isFocused != field.isFirstResponder {
+            if isFocused { field.becomeFirstResponder() } else { field.resignFirstResponder() }
+        }
+        // Disconnect or reconnect: the Mac's text is unknown, so start empty.
+        if !model.isConnected || context.coordinator.resetCount != model.textResetCount {
+            context.coordinator.resetCount = model.textResetCount
+            context.coordinator.clear(field)
         }
     }
 
-    private func label(_ text: String, symbol: String, tint: Color) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: symbol)
-            Text(text)
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: BackspaceField, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? 200, height: uiView.intrinsicContentSize.height)
+    }
+
+    final class BackspaceField: UITextField {
+        var onEmptyBackspace: (() -> Void)?
+
+        override func deleteBackward() {
+            if (text ?? "").isEmpty { onEmptyBackspace?() }
+            super.deleteBackward()
         }
-        .font(.caption)
-        .foregroundStyle(tint)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(.regularMaterial, in: Capsule())
-        .transition(.opacity)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: LiveTextField
+        var resetCount = 0
+
+        init(_ parent: LiveTextField) { self.parent = parent }
+
+        func clear(_ field: UITextField) {
+            guard !(field.text ?? "").isEmpty else { return }
+            field.text = ""
+            parent.model.resetText()
+        }
+
+        @objc func changed(_ field: UITextField) {
+            // Japanese/Chinese composition: send only once it commits.
+            guard field.markedTextRange == nil else { return }
+            parent.model.textChanged(field.text ?? "")
+        }
+
+        func textFieldDidChangeSelection(_ field: UITextField) {
+            // Cursor left the end: mid-text edits would land wrong on the Mac, so re-baseline.
+            guard field.markedTextRange == nil, let range = field.selectedTextRange,
+                  !range.isEmpty || range.end != field.endOfDocument else { return }
+            clear(field)
+        }
+
+        func textFieldShouldReturn(_ field: UITextField) -> Bool {
+            parent.model.tap(.enter)
+            return false
+        }
+
+        func textFieldDidBeginEditing(_ field: UITextField) {
+            DispatchQueue.main.async { self.parent.isFocused = true }
+        }
+
+        func textFieldDidEndEditing(_ field: UITextField) {
+            clear(field)
+            DispatchQueue.main.async { self.parent.isFocused = false }
+        }
     }
 }

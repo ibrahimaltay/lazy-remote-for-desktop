@@ -23,8 +23,8 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
 
     /// Called on the main queue.
     public var onStatus: ((Status) -> Void)?
-    /// Called on the main queue after the encrypted injection result, or failure.
-    public var onTextDelivered: ((Bool) -> Void)?
+    /// Called on the main queue when a `sendEdit` was dropped (queue full); the caller must re-baseline.
+    public var onTextEditDropped: (() -> Void)?
 
     /// Called on the main queue with what the Mac's Spotlight shows, while watching.
     public var onSpotlightResults: ((SpotlightResults) -> Void)?
@@ -89,9 +89,6 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
     private var pendingScrollX = 0.0
     private var pendingScrollY = 0.0
     private var scrollPhase = ScrollPhase.changed
-    private var textDelivery = TextDeliveryTracker()
-    private var pendingTextID: UInt64? { textDelivery.pendingID }
-    private var textTimer = UUID()
 
     private static let lastPeripheralKey = "lastPeripheral"
     private static let maximumFrames = 2048
@@ -239,26 +236,22 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
         }
     }
 
-    public func send(text: String) {
+    /// Live typing: backspaces `delete` characters on the Mac, then types `insert`. Never retried.
+    public func sendEdit(delete: Int, insert: String) {
         queue.async {
-            guard self.stage == .ready, !text.isEmpty, text.utf8.count <= 4096,
-                  self.pendingTextID == nil else {
-                self.reportText(delivered: false)
-                return
-            }
+            guard self.stage == .ready else { return }
             do {
-                let id = try self.allocateID()
-                try self.textDelivery.begin(id)
-                let token = UUID()
-                self.textTimer = token
-                let generation = self.generation
-                self.queue.asyncAfter(deadline: .now() + 30) {
-                    guard self.generation == generation, self.textTimer == token,
-                          self.pendingTextID == id else { return }
-                    self.fail("Text delivery timed out. Reconnect to the Mac before trying again.")
+                let (frames, bytes) = try self.cost(.message(.textEdit(delete: delete, insert: insert)), type: .withResponse)
+                // Headroom keeps keys and pointer events queueable. A full queue (BLE stalled) drops the
+                // edit rather than failing the session; it is never retried, so the Mac text may then differ.
+                guard self.queuedFrames + frames <= Self.maximumFrames - 256,
+                      self.queuedBytes + bytes <= Self.maximumBytes - 8 * 1024 else {
+                    self.log.error("textEdit dropped: write queue full")
+                    DispatchQueue.main.async { self.onTextEditDropped?() }
+                    return
                 }
-                self.enqueueInput(.text(id: id, value: text))
-            } catch { self.failSecurity(error) }
+            } catch { return self.failSecurity(error) }
+            self.enqueueInput(.textEdit(delete: delete, insert: insert))
         }
     }
 
@@ -450,21 +443,10 @@ public final class RemoteClient: NSObject, @unchecked Sendable {
         pendingScrollX = 0
         pendingScrollY = 0
         scrollPhase = .changed
-        finishText(false)
     }
 
     private var hasPendingDeltas: Bool {
         [pendingX, pendingY, pendingScrollX, pendingScrollY].contains { abs($0) >= 1 }
-    }
-
-    private func finishText(_ delivered: Bool) {
-        guard textDelivery.cancel() else { return }
-        textTimer = UUID()
-        reportText(delivered: delivered)
-    }
-
-    private func reportText(delivered: Bool) {
-        DispatchQueue.main.async { self.onTextDelivered?(delivered) }
     }
 
     private func armStageTimeout(_ seconds: TimeInterval = 10) {
@@ -762,12 +744,6 @@ extension RemoteClient: CBPeripheralDelegate {
             pump()
         case .revoked:
             fail("Access was revoked on the Mac. Use Reconnect, then ask its owner to select Allow to pair again.")
-        case .textResult(let id, let success):
-            guard stage == .ready else { throw SecureError.wrongPhase }
-            if let delivered = textDelivery.receipt(id: id, success: success) {
-                textTimer = UUID()
-                reportText(delivered: delivered)
-            }
         case .spotlightResults(let typed, let titles):
             guard stage == .ready else { throw SecureError.wrongPhase }
             let results = SpotlightResults(typed: typed, titles: titles)

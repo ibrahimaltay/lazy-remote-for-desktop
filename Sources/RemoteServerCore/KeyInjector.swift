@@ -129,6 +129,12 @@ public struct KeyInjector: @unchecked Sendable {
         }
     }
 
+    /// Backspaces `delete` times, then types `insert`: a live edit at the end of the focused text.
+    public func edit(delete: Int, insert: String) {
+        for _ in 0..<max(0, delete) { tap(.backspace) }
+        type(insert)
+    }
+
     /// Cmd+Space, the default shortcut; a custom Spotlight shortcut is not supported.
     private func openSpotlight() {
         // A real Command press, not just a flag, or the modifier latches in HID state.

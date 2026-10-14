@@ -349,6 +349,8 @@ public final class RemoteServer: NSObject, @unchecked Sendable {
             case .text(let id, let value):
                 injector.type(value)
                 try send(.textResult(id: id, success: true), to: peer)
+            case .textEdit(let delete, let insert):
+                injector.edit(delete: delete, insert: insert)
             case .spotlightQuery(let query):
                 if peer.watchesSpotlight {
                     pendingQuery = query
