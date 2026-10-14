@@ -1,6 +1,6 @@
 # Spotlight results mirror
 
-Status: draft
+Status: in progress
 
 ## Goal
 
