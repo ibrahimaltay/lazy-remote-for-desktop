@@ -44,6 +44,7 @@ struct SpotlightOverlay: View {
 
     @State private var query = ""
     @FocusState private var isFocused: Bool
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private let placeholderColor = Color(red: 235 / 255, green: 235 / 255, blue: 245 / 255)
 
@@ -62,11 +63,12 @@ struct SpotlightOverlay: View {
             VStack(spacing: 10) {
                 pill
                 if let results = model.spotlightCard, !results.titles.isEmpty {
-                    ResultsCard(results: results)
+                    ResultsCard(results: results, maxHeight: compact ? 108 : 370)
                 }
             }
+            .frame(maxWidth: compact ? 540 : .infinity)
             .padding(.horizontal, 14)
-            .padding(.top, 70)
+            .padding(.top, compact ? 12 : 70)
         }
         .onAppear {
             isFocused = true
@@ -75,6 +77,8 @@ struct SpotlightOverlay: View {
         .onChange(of: query) { model.typeSpotlight(query) }
         .onDisappear { model.setSpotlightOpen(false) }
     }
+
+    private var compact: Bool { verticalSizeClass == .compact }
 
     private var pill: some View {
         HStack(spacing: 12) {
@@ -117,6 +121,7 @@ struct SpotlightOverlay: View {
 /// The Mac's results as text. Display only: rows have no press state and no action.
 private struct ResultsCard: View {
     let results: SpotlightResults
+    let maxHeight: CGFloat
 
     var body: some View {
         ScrollView {
@@ -128,7 +133,7 @@ private struct ResultsCard: View {
             .padding(6)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .frame(maxHeight: 370)
+        .frame(maxHeight: maxHeight)
         .fixedSize(horizontal: false, vertical: true)
         .background {
             RoundedRectangle(cornerRadius: 22).fill(.ultraThinMaterial)

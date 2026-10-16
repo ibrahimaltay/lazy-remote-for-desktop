@@ -5,10 +5,12 @@ import SwiftUI
 struct FloatingRemoteButton: View {
     let model: RemoteViewModel
     @Binding var isDocked: Bool
-    /// Center of the header slot.
+    /// Center of the dock slot.
     let dock: CGPoint
-    let headerBottom: CGFloat
-    let inputBarHeight: CGFloat
+    /// Distances from the layer edges to the box the button snaps within.
+    let snap: EdgeInsets
+    /// Dropping above this y docks (the portrait header).
+    let nearDockAbove: CGFloat
     let open: () -> Void
 
     // Fractions of the layer size, so the spot survives size and device changes.
@@ -19,11 +21,13 @@ struct FloatingRemoteButton: View {
     @State private var isNearDock = false
 
     private static let floatingSize: CGFloat = 58
-    private static let edgeInset: CGFloat = 41
 
     var body: some View {
         GeometryReader { geo in
             let docked = isDocked && dragPosition == nil
+            // Landscape lets this layer extend under the Island inset, so "root" is offset from it.
+            let origin = geo.frame(in: .named("root")).origin
+            let dock = CGPoint(x: self.dock.x - origin.x, y: self.dock.y - origin.y)
             let center = dragPosition ?? (docked ? dock : snapped(
                 CGPoint(x: fractionX * geo.size.width, y: fractionY * geo.size.height), in: geo.size
             ))
@@ -33,7 +37,7 @@ struct FloatingRemoteButton: View {
             }
             button(docked: docked)
                 .position(center)
-                .gesture(drag(from: center, in: geo.size))
+                .gesture(drag(from: center, in: geo.size, dock: dock))
         }
         .ignoresSafeArea(.keyboard)
     }
@@ -72,7 +76,7 @@ struct FloatingRemoteButton: View {
     }
 
     /// Under 5pt of travel is a tap; anything more drags 1:1, then docks or snaps to an edge.
-    private func drag(from center: CGPoint, in size: CGSize) -> some Gesture {
+    private func drag(from center: CGPoint, in size: CGSize, dock: CGPoint) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named("root"))
             .onChanged { value in
                 let t = value.translation
@@ -87,7 +91,7 @@ struct FloatingRemoteButton: View {
                     y: min(max(origin.y + t.height, radius), size.height - radius)
                 )
                 dragPosition = p
-                isNearDock = p.y < headerBottom || hypot(p.x - dock.x, p.y - dock.y) < 60
+                isNearDock = p.y < nearDockAbove || hypot(p.x - dock.x, p.y - dock.y) < 60
             }
             .onEnded { _ in
                 guard let p = dragPosition else {
@@ -110,12 +114,12 @@ struct FloatingRemoteButton: View {
             }
     }
 
-    /// Nearest side edge, between the header and the input bar.
+    /// Nearest side edge of the snap box.
     private func snapped(_ p: CGPoint, in size: CGSize) -> CGPoint {
-        let inset = Self.edgeInset
+        let left = snap.leading, right = size.width - snap.trailing
         return CGPoint(
-            x: p.x < size.width / 2 ? inset : size.width - inset,
-            y: min(max(p.y, headerBottom + inset), size.height - inputBarHeight - inset)
+            x: p.x < size.width / 2 ? left : right,
+            y: min(max(p.y, snap.top), size.height - snap.bottom)
         )
     }
 }
