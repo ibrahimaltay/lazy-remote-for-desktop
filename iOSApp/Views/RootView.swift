@@ -11,20 +11,14 @@ struct RootView: View {
     @State private var isDPadOpen = false
     @State private var dockCenter = CGPoint.zero
     @State private var headerBottom: CGFloat = 0
-    @State private var screen = Screen()
+    @State private var isLandscape = false
+    /// .landscapeLeft puts the Island on the right, so the column goes on the left.
+    @State private var columnAtLeading = true
+    /// Real safe-area inset on the Island side, from the window scene.
+    @State private var islandInset: CGFloat = 0
 
-    /// Full-screen size and the real safe-area sides, measured outside the safe-area override.
-    private struct Screen: Equatable {
-        var isLandscape = false
-        var leading: CGFloat = 0
-        var trailing: CGFloat = 0
-    }
-
-    private var isLandscape: Bool { screen.isLandscape }
-    /// The column sits opposite the Dynamic Island (the side with the larger safe area).
-    private var columnAtLeading: Bool { screen.leading <= screen.trailing }
-    private var columnEdge: CGFloat { max(14, columnAtLeading ? screen.leading : screen.trailing) }
-    private var farEdge: CGFloat { max(16, columnAtLeading ? screen.trailing : screen.leading) }
+    private var columnEdge: CGFloat { 14 }
+    private var farEdge: CGFloat { max(16, islandInset) }
     private var nearInset: CGFloat { columnEdge + 42 }
     private var sideInsets: (leading: CGFloat, trailing: CGFloat) {
         columnAtLeading ? (nearInset, farEdge) : (farEdge, nearInset)
@@ -110,13 +104,17 @@ struct RootView: View {
         // Landscape lays out by hand to the screen edges; the keyboard inset still applies.
         .ignoresSafeArea(.container, edges: isLandscape ? [.horizontal, .bottom] : [])
         .coordinateSpace(.named("root"))
-        .background {
-            Color.clear.ignoresSafeArea().onGeometryChange(for: Screen.self) {
-                Screen(
-                    isLandscape: $0.size.width > $0.size.height,
-                    leading: $0.safeAreaInsets.leading, trailing: $0.safeAreaInsets.trailing
-                )
-            } action: { screen = $0 }
+        .onGeometryChange(for: Bool.self) { $0.size.width > $0.size.height } action: {
+            isLandscape = $0
+            readScene()
+        }
+        // Landscape-to-landscape flips keep the size, so listen for the rotation itself.
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+            DispatchQueue.main.async { readScene() }
+        }
+        .onAppear {
+            UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+            readScene()
         }
         .background(Color(.systemBackground))
         // The controls reach the top and bottom edges, where a sideways drag would otherwise
@@ -126,6 +124,17 @@ struct RootView: View {
             Button("Forget Mac", role: .destructive) { model.forgetMac() }
         } message: {
             Text("The saved Mac identity will be removed. Only reconnect to a Mac you trust.")
+        }
+    }
+
+    private func readScene() {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        guard let scene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first else { return }
+        let insets = scene.keyWindow?.safeAreaInsets ?? .zero
+        switch scene.interfaceOrientation {
+        case .landscapeLeft: columnAtLeading = true; islandInset = insets.right
+        case .landscapeRight: columnAtLeading = false; islandInset = insets.left
+        default: break
         }
     }
 
