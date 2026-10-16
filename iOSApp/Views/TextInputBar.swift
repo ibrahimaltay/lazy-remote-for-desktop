@@ -3,6 +3,7 @@ import SwiftUI
 struct TextInputBar: View {
     let model: RemoteViewModel
     @Binding var isFocused: Bool
+    var insets = EdgeInsets(top: 4, leading: 20, bottom: 12, trailing: 20)
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
@@ -32,9 +33,7 @@ struct TextInputBar: View {
             .accessibilityHidden(!isFocused)
         }
         .animation(.easeOut(duration: 0.25), value: isFocused)
-        .padding(.horizontal, 20)
-        .padding(.top, 4)
-        .padding(.bottom, 12)
+        .padding(insets)
         // Tapping the bar's padding also opens the keyboard.
         .contentShape(.rect)
         .onTapGesture { isFocused = true }

@@ -8,6 +8,10 @@ struct DPadOverlay: View {
     @State private var isShown = false
     @State private var armed = false
     @State private var armTask: Task<Void, Never>?
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var compact: Bool { verticalSizeClass == .compact }
+    private var padSize: CGFloat { compact ? 210 : 236 }
 
     var body: some View {
         ZStack {
@@ -20,7 +24,7 @@ struct DPadOverlay: View {
                 .onTapGesture(perform: backdropTapped)
                 .accessibilityHidden(true)
 
-            HStack(alignment: .top, spacing: 6) {
+            HStack(alignment: compact ? .center : .top, spacing: compact ? 14 : 6) {
                 sideCapsule([
                     (.brightnessUp, "sun.max", "Brightness up"),
                     (.brightnessDown, "sun.min", "Brightness down"),
@@ -38,16 +42,17 @@ struct DPadOverlay: View {
                         (.playPause, "playpause", "Play / Pause"),
                         (.nextTrack, "forward", "Next track"),
                     ],
-                    axis: .horizontal, segment: CGSize(width: 70, height: 56), repeats: false
+                    axis: .horizontal, segment: compact ? CGSize(width: 200.0 / 3, height: 50) : CGSize(width: 70, height: 56),
+                    repeats: false, iconSize: 20
                 )
-                .offset(y: 60 + 56)
+                .offset(y: compact ? 18 + 50 : 60 + 56)
             }
             // Dim as one layer, or the gaps show through the center button.
             .compositingGroup()
             .opacity(model.isConnected ? 1 : 0.35)
             .scaleEffect(isShown ? 1 : 0.92)
             // Sits a little below screen center, toward the thumb.
-            .offset(y: 44)
+            .offset(y: compact ? -34 : 44)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .ignoresSafeArea()
 
@@ -59,8 +64,9 @@ struct DPadOverlay: View {
                     .background(Color(.systemGray4).opacity(0.8), in: Circle())
             }
             .accessibilityLabel("Close")
-            .padding(.bottom, 40)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            .padding(compact ? .top : .bottom, compact ? 20 : 40)
+            .padding(.trailing, compact ? 72 : 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: compact ? .topTrailing : .bottom)
             .ignoresSafeArea()
 
             Text("Tap again to close")
@@ -71,8 +77,9 @@ struct DPadOverlay: View {
                 .background(.regularMaterial, in: Capsule())
                 .opacity(armed ? 1 : 0)
                 .animation(.easeOut(duration: 0.2), value: armed)
-                .padding(.bottom, 40 + 44 + 12)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(compact ? .top : .bottom, compact ? 20 + 44 + 12 : 40 + 44 + 12)
+                .padding(.trailing, compact ? 72 : 0)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: compact ? .topTrailing : .bottom)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
@@ -107,9 +114,9 @@ struct DPadOverlay: View {
             segment(.left, "chevron.left", "Left", degrees: 180)
             Circle()
                 .fill(Color(red: 10 / 255, green: 10 / 255, blue: 12 / 255).opacity(0.85))
-                .frame(width: 114, height: 114)
+                .frame(width: compact ? 102 : 114, height: compact ? 102 : 114)
             DPadKey(
-                shape: Circle(), size: CGSize(width: 100, height: 100), command: .mid, symbol: "space",
+                shape: Circle(), size: CGSize(width: compact ? 88 : 100, height: compact ? 88 : 100), command: .mid, symbol: "space",
                 label: "Space", fill: Color(.systemGray3), iconSize: 30, model: model
             )
             .overlay {
@@ -121,19 +128,22 @@ struct DPadOverlay: View {
                     .allowsHitTesting(false)
             }
         }
-        .frame(width: 236, height: 236)
+        .frame(width: padSize, height: padSize)
         .clipShape(Circle())
         .shadow(color: .black.opacity(0.5), radius: 25, y: 20)
     }
 
     private func sideCapsule(_ keys: [(Command, String, String)]) -> some View {
-        capsule(keys, axis: .vertical, segment: CGSize(width: 48, height: 71.5), repeats: true)
-            .offset(y: -69)
+        capsule(
+            keys, axis: .vertical, segment: compact ? CGSize(width: 44, height: 63.5) : CGSize(width: 48, height: 71.5),
+            repeats: true, iconSize: compact ? 24 : 20
+        )
+        .offset(y: compact ? 0 : -69)
     }
 
     /// Equal segments 5pt apart, clipped to one capsule, like the function-row keys.
     private func capsule(
-        _ keys: [(Command, String, String)], axis: Axis, segment: CGSize, repeats: Bool
+        _ keys: [(Command, String, String)], axis: Axis, segment: CGSize, repeats: Bool, iconSize: CGFloat
     ) -> some View {
         let layout = axis == .vertical
             ? AnyLayout(VStackLayout(spacing: 5)) : AnyLayout(HStackLayout(spacing: 5))
@@ -144,7 +154,7 @@ struct DPadOverlay: View {
                 ForEach(keys, id: \.0) { command, symbol, label in
                     DPadKey(
                         shape: Rectangle(), size: segment, command: command, symbol: symbol, label: label,
-                        fill: Color(.systemGray4).opacity(0.92), iconSize: 20, iconWeight: .regular,
+                        fill: Color(.systemGray4).opacity(0.92), iconSize: iconSize, iconWeight: .regular,
                         repeats: repeats, model: model
                     )
                 }
@@ -158,9 +168,9 @@ struct DPadOverlay: View {
     private func segment(_ command: Command, _ symbol: String, _ label: String, degrees: Double) -> some View {
         let angle = Angle.degrees(degrees)
         return DPadKey(
-            shape: Wedge(angle: angle), size: CGSize(width: 236, height: 236), command: command,
+            shape: Wedge(angle: angle), size: CGSize(width: padSize, height: padSize), command: command,
             symbol: symbol, label: label, fill: Color(.systemGray4).opacity(0.92),
-            iconOffset: CGSize(width: 80 * cos(angle.radians), height: 80 * sin(angle.radians)),
+            iconOffset: CGSize(width: padSize * 80 / 236 * cos(angle.radians), height: padSize * 80 / 236 * sin(angle.radians)),
             model: model
         )
     }

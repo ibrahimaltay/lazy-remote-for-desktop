@@ -28,6 +28,8 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         NSBluetoothAlwaysUsageDescription: Used to find your Mac and send remote control button presses to it.
         ITSAppUsesNonExemptEncryption: false
     settings:

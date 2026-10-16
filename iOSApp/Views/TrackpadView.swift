@@ -5,6 +5,7 @@ import UIKit
 
 struct TrackpadView: View {
     let model: RemoteViewModel
+    var insets = EdgeInsets(top: 0, leading: 20, bottom: 14, trailing: 20)
 
     var body: some View {
         TrackpadSurface(model: model)
@@ -13,8 +14,7 @@ struct TrackpadView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .opacity(model.isConnected ? 1 : 0.35)
             .animation(.easeOut(duration: 0.2), value: model.isConnected)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 14)
+            .padding(insets)
     }
 }
 

@@ -60,15 +60,15 @@ Out (deliberately):
 
 ## Steps
 
-- [ ] Add `UIInterfaceOrientationLandscapeLeft` and `UIInterfaceOrientationLandscapeRight` to `project.yml`; run `xcodegen generate`.
-- [ ] `RootView`: pick layout from size (wide = landscape) and keep the same views with `AnyLayout`. Ignore horizontal and bottom safe areas, lay out by hand per design.md, with the column opposite the Island and the Island-side inset taken from the safe area.
-- [ ] Vertical connection status in the column, ellipsis truncation.
-- [ ] `TrackpadView` and `TextInputBar`: paddings follow orientation.
-- [ ] `FloatingRemoteButton`: landscape snap range, dock slot in the column, docked default.
-- [ ] `DPadOverlay`: landscape sizes, X top-right, hint below X, two-tap close kept.
-- [ ] `SpotlightOverlay`: 540 pill 12 from top, results capped near 108.
-- [ ] Defer system gestures on the top edge in landscape.
-- [ ] Build both app targets, run `swift test`.
+- [x] Add `UIInterfaceOrientationLandscapeLeft` and `UIInterfaceOrientationLandscapeRight` to `project.yml`; run `xcodegen generate`.
+- [x] `RootView`: pick layout from size (wide = landscape) and keep the same views with `AnyLayout`. Ignore horizontal and bottom safe areas, lay out by hand per design.md, with the column opposite the Island and the Island-side inset taken from the safe area.
+- [x] Vertical connection status in the column, ellipsis truncation.
+- [x] `TrackpadView` and `TextInputBar`: paddings follow orientation.
+- [x] `FloatingRemoteButton`: landscape snap range, dock slot in the column, docked default.
+- [x] `DPadOverlay`: landscape sizes, X top-right, hint below X, two-tap close kept.
+- [x] `SpotlightOverlay`: 540 pill 12 from top, results capped near 108.
+- [x] Defer system gestures on the top edge in landscape.
+- [x] Build both app targets, run `swift test`.
 
 ## Acceptance criteria
 
