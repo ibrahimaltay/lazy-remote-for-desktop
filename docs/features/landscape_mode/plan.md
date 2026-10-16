@@ -85,10 +85,10 @@ Out (deliberately):
 
 ## Done when
 
-- [ ] Acceptance criteria verified by tests
-- [ ] `swift test` passes
-- [ ] Both app targets build
-- [ ] Tester findings resolved with the developer
+- [x] Acceptance criteria verified by tests: none; user accepted device QA as the only verification (layout logic is app-shell, not extracted)
+- [x] `swift test` passes
+- [x] Both app targets build
+- [x] Tester findings resolved with the developer
 - [ ] Last QA round: every acceptance criterion passes on device, no open issues
 - [x] Marketer skipped by user decision (decision 10); no promo GIFs
 
