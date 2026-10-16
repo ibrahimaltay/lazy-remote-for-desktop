@@ -89,7 +89,7 @@ Out (deliberately):
 - [x] `swift test` passes
 - [x] Both app targets build
 - [x] Tester findings resolved with the developer
-- [ ] Last QA round: every acceptance criterion passes on device, no open issues
+- [x] Last QA round: every acceptance criterion passes on device, no open issues
 - [x] Marketer skipped by user decision (decision 10); no promo GIFs
 
 ## QA log
@@ -100,7 +100,7 @@ issue found in manual QA. Minor bug (code wrong, plan right) goes to the develop
 
 | Round | Build | Issue | Severity | Routed to | Status |
 |-------|-------|-------|----------|-----------|--------|
-| 1 | commit 85715d5 | In landscape the remote button docks to the trackpad instead of the side. User's screenshot (device, Island on left, column on the right) shows the dashed dock ring inside the trackpad about 60pt left of the controls column, level with the gap under the search button, instead of in the reserved dock slot in the column (third slot under More and Spotlight). Expected: ring and docked button sit in the column's dock slot. | Minor (plan right, code wrong) | developer | open |
+| 1 | commit 85715d5 | In landscape the remote button docks to the trackpad instead of the side. User's screenshot (device, Island on left, column on the right) shows the dashed dock ring inside the trackpad about 60pt left of the controls column, level with the gap under the search button, instead of in the reserved dock slot in the column (third slot under More and Spotlight). Expected: ring and docked button sit in the column's dock slot. | Minor (plan right, code wrong) | developer | closed (fixed in 8efb22d, verified on device by the user) |
 
 ## Open questions
 
