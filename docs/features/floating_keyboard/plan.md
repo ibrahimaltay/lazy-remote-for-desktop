@@ -71,8 +71,8 @@ BLE only; no wire or protocol change, so `docs/secure-protocol.md` is untouched.
 - [x] `swift test` passes
 - [x] Both app targets build
 - [x] Tester findings resolved with the developer
-- [ ] Last QA round: every acceptance criterion passes on device, no open issues
-- [ ] Marketer has reviewed the promo GIFs for this feature (after QA passes)
+- [x] Last QA round: every acceptance criterion passes on device, no open issues
+- [x] Marketer has reviewed the promo GIFs for this feature (after QA passes)
 
 ## QA log
 

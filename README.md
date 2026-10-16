@@ -22,15 +22,15 @@ Scroll with two fingers and the page glides on. Long-press, then move, to drag. 
 
 ### Floating Remote
 
-A remote button you can place anywhere on the screen, or dock in the top bar. Tap it for a big D-pad: arrow keys for slides, menus and videos (hold one to repeat it), Space in the center, play/pause and track buttons, plus brightness and volume.
+The Remote and Keyboard buttons sit in the top bar; drag either one out to float it anywhere, or back to dock it. Tap Remote for a big D-pad: arrow keys for slides, menus and videos (hold one to repeat it), Space in the center, play/pause and track buttons, plus brightness and volume.
 
-![Opening the D-pad on the iPhone to skip through a Mac video and pause it](readme-gifs/floating-remote.gif)
+![Opening the D-pad from the iPhone's top bar to skip through a Mac video and pause it](readme-gifs/floating-remote.gif)
 
 ### Keyboard
 
-Type on your iPhone and the words appear on your Mac as you type, in any language, emoji included. Autocorrect and dictation fixes follow along. Tap Send to press Return and start fresh.
+Tap the keyboard button and type: the words appear on your Mac as you type, in any language, emoji included. Autocorrect and dictation fixes follow along. Tap Send to press Return and start fresh. Tap Close or outside to stop.
 
-![Typing on the iPhone and the words appearing live in Mac Notes, with autocorrect syncing, then tapping Send](readme-gifs/keyboard.gif)
+![Opening the keyboard from the iPhone's top bar, typing live into Mac Notes with autocorrect syncing, then tapping Send](readme-gifs/keyboard.gif)
 
 ### Spotlight
 
@@ -41,10 +41,10 @@ Tap the magnifier and type. Your Mac's Spotlight results show up on your iPhone 
 ## Features
 
 - **Arrow keys & play/pause:** control videos and presentations without leaving your seat.
-- **Floating remote:** a button you can place anywhere on the screen or dock in the top bar; tap it for the D-pad.
+- **Floating Remote and Keyboard:** two buttons docked in the top bar; drag one out to place it anywhere on the screen, or back to dock it. Tap Remote for the D-pad, Keyboard to type.
 - **Trackpad:** move the cursor; tap to click, two-finger tap to right-click.
 - **Gestures:** two-finger scroll with momentum, long-press to drag, and three-finger swipe for desktops and Mission Control.
-- **Keyboard:** type on your iPhone and the words appear on your Mac as you type.
+- **Keyboard:** tap the keyboard button and type; the words appear on your Mac as you type.
 - **Any language and emoji:** type in any script, emoji included.
 - **Spotlight:** opens Spotlight on your Mac by sending ⌘ Space, then type your search from the iPhone. Results appear on your iPhone as you type (view only). Press go to open the top result, or tap outside to cancel. A custom Spotlight shortcut isn't supported.
 - **Direct and encrypted:** connects over Bluetooth, with no Wi-Fi setup or accounts.
@@ -78,7 +78,7 @@ The iPhone app will be on the App Store soon.
 9. On your Mac, click the LazyRemote icon in the menu bar.
 10. Select **Allow** followed by the name of your iPhone.
 11. Make sure that the iPhone shows the name of your Mac with a green dot.
-12. Use the trackpad and the buttons below it to control your Mac. To type, tap **Type to send** and start typing; the text appears on your Mac as you go.
+12. Use the trackpad to control your Mac. To type, tap the keyboard button in the top bar and start typing; the text appears on your Mac as you go.
 
 ## Reset Pairing
 

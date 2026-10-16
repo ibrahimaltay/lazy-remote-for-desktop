@@ -45,7 +45,7 @@ class Spotlight(m.Scene):
         kb.shift(P(0, -KB_H * S))
         self.add(kb)
         self.play(m.FadeIn(sp, scale=0.97), m.FadeIn(blur), m.FadeIn(dim), m.FadeIn(bar), m.FadeIn(pill),
-                  m.FadeOut(screen.button), kb.animate.shift(P(0, KB_H * S)),
+                  m.FadeOut(screen.tools), kb.animate.shift(P(0, KB_H * S)),
                   run_time=0.25, rate_func=m.ease_out_cubic)
 
         # each letter: pill and Mac field update together (tag 12), then both lists show the Mac's results
@@ -63,7 +63,7 @@ class Spotlight(m.Scene):
         # go: Enter on the Mac opens the top hit; the overlay closes
         tap(self, kb.keys["return"].get_center(), t=0.12)
         self.play(m.FadeOut(sp), m.FadeOut(blur), m.FadeOut(dim), m.FadeOut(pill), m.FadeOut(card),
-                  m.FadeIn(screen.button), kb.animate.shift(P(0, -KB_H * S)),
+                  m.FadeIn(screen.tools), kb.animate.shift(P(0, -KB_H * S)),
                   run_time=0.25, rate_func=m.ease_out_cubic)
         self.remove(kb, bar)
         photos = photos_window(mac)

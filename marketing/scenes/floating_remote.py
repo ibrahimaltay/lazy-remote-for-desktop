@@ -4,7 +4,7 @@ from common import *
 
 
 class FloatingRemote(m.Scene):
-    """Tap the floating remote, seek with the D-pad arrows, pause and play with the media key, close."""
+    """Tap the docked Remote tool, seek with the D-pad arrows, pause and play with the media key, close."""
 
     def construct(self):
         stage(self)
@@ -15,12 +15,13 @@ class FloatingRemote(m.Scene):
         screen = remote_screen(phone)
         self.add(mac, player, bar, glyph, mac.front, phone, screen, phone.front)
 
-        # tap the floating button: the D-pad opens
-        tap(self, phone.pt(*FLOAT_HOME))
+        # tap the docked Remote tool: the D-pad opens (backdrop fades, pad row scales 0.92 -> 1, easeOut 0.2)
+        tap(self, phone.pt(*DOCK))
         pad = dpad_overlay(phone)
         keys = pad.keys
         pressable(*keys.values())
-        self.play(m.FadeIn(pad, scale=0.92), run_time=0.2, rate_func=m.ease_out_cubic)   # easeOut 0.2, scale 0.92 -> 1
+        self.play(m.FadeIn(pad.backdrop), m.FadeIn(pad.controls, scale=0.92), m.FadeIn(pad.close),
+                  run_time=0.2, rate_func=m.ease_out_cubic)
 
         def key(name, mac_change, hold=0.18):
             at = keys[name].get_center()
