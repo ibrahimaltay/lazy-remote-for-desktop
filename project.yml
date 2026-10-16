@@ -23,8 +23,8 @@ targets:
       path: iOSApp/Info.plist
       properties:
         CFBundleDisplayName: LazyRemote
-        CFBundleShortVersionString: "2.1"
-        CFBundleVersion: "17"
+        CFBundleShortVersionString: "2.2"
+        CFBundleVersion: "18"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -58,7 +58,7 @@ targets:
       path: macApp/Info.plist
       properties:
         CFBundleDisplayName: LazyRemote
-        CFBundleShortVersionString: "2.1"
+        CFBundleShortVersionString: "2.2"
         CFBundleVersion: "7"
         LSUIElement: true
         LSApplicationCategoryType: public.app-category.utilities

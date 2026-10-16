@@ -1,42 +1,57 @@
 import SwiftUI
 
+/// Compose row of the Keyboard overlay: Close, field, Send. Stays in the hierarchy (hidden) when
+/// unfocused so the field always resigns through its own path and never leaves stale text state.
 struct TextInputBar: View {
     let model: RemoteViewModel
     @Binding var isFocused: Bool
-    var insets = EdgeInsets(top: 4, leading: 20, bottom: 12, trailing: 20)
+    var insets = EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20)
+
+    @State private var hasText = false
+
+    private static let accent = Color(red: 10 / 255, green: 132 / 255, blue: 1)
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 0) {
-            LiveTextField(model: model, isFocused: $isFocused)
+        HStack(alignment: .bottom, spacing: 10) {
+            Button { isFocused = false } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(Color(red: 58 / 255, green: 58 / 255, blue: 60 / 255).opacity(0.92), in: Circle())
+            }
+            .accessibilityLabel("Close")
+
+            LiveTextField(model: model, isFocused: $isFocused, hasText: $hasText)
                 .padding(.horizontal, 16)
                 .frame(minHeight: 44)
                 .background(
-                    Color(.systemGray5),
-                    in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    Color(red: 44 / 255, green: 44 / 255, blue: 46 / 255),
+                    in: RoundedRectangle(cornerRadius: 22, style: .continuous)
                 )
+                .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.4), radius: 15, y: 10)
 
-            // Always laid out; width and opacity ease with the keyboard (no insertion travel).
             Button(action: model.sendText) {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color.white)
-                    .frame(width: 42, height: 42)
-                    .background(Circle().fill(Color(red: 10 / 255, green: 132 / 255, blue: 1)))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle().fill(hasText && model.isConnected
+                            ? Self.accent : Color(red: 58 / 255, green: 58 / 255, blue: 60 / 255))
+                    )
             }
             .accessibilityLabel("Send")
-            .opacity(model.isConnected ? 1 : 0.5)
-            .disabled(!model.isConnected || !isFocused)
-            .padding(.leading, 10)
-            .frame(width: isFocused ? 52 : 0, alignment: .trailing)
-            .clipped()
-            .opacity(isFocused ? 1 : 0)
-            .accessibilityHidden(!isFocused)
+            .disabled(!model.isConnected)
         }
-        .animation(.easeOut(duration: 0.25), value: isFocused)
+        // The scrim is always dark, so the row is too.
+        .environment(\.colorScheme, .dark)
         .padding(insets)
-        // Tapping the bar's padding also opens the keyboard.
-        .contentShape(.rect)
-        .onTapGesture { isFocused = true }
+        .opacity(isFocused ? 1 : 0)
+        .allowsHitTesting(isFocused)
+        .accessibilityHidden(!isFocused)
+        .animation(.easeOut(duration: 0.2), value: isFocused)
     }
 }
 
@@ -44,6 +59,7 @@ struct TextInputBar: View {
 private struct LiveTextField: UIViewRepresentable {
     let model: RemoteViewModel
     @Binding var isFocused: Bool
+    @Binding var hasText: Bool
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -125,12 +141,14 @@ private struct LiveTextField: UIViewRepresentable {
         func clear(_ field: UITextField) {
             guard !(field.text ?? "").isEmpty else { return }
             field.text = ""
+            DispatchQueue.main.async { self.parent.hasText = false }
             parent.model.resetText()
         }
 
         @objc func changed(_ field: UITextField) {
             // Japanese/Chinese composition: send only once it commits.
             guard field.markedTextRange == nil else { return }
+            parent.hasText = !(field.text ?? "").isEmpty
             parent.model.textChanged(field.text ?? "")
         }
 

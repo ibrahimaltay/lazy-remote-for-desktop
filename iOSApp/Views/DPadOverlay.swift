@@ -16,10 +16,7 @@ struct DPadOverlay: View {
     var body: some View {
         ZStack {
             // Tap on lift; the first tap only arms for 1s so a stray touch can't close the pad.
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .overlay(Color.black.opacity(0.6))
-                .ignoresSafeArea()
+            ToolScrim()
                 .contentShape(.rect)
                 .onTapGesture(perform: backdropTapped)
                 .accessibilityHidden(true)
@@ -283,5 +280,15 @@ private struct DPadKey<S: Shape>: View {
         } else {
             model.release(command)
         }
+    }
+}
+
+/// Backdrop shared by the Remote and Keyboard overlays.
+struct ToolScrim: View {
+    var body: some View {
+        Rectangle()
+            .fill(.ultraThinMaterial)
+            .overlay(Color(red: 10 / 255, green: 10 / 255, blue: 12 / 255).opacity(0.74))
+            .ignoresSafeArea()
     }
 }
