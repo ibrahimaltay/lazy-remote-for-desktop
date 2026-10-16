@@ -25,6 +25,9 @@ struct FloatingRemoteButton: View {
     var body: some View {
         GeometryReader { geo in
             let docked = isDocked && dragPosition == nil
+            // Landscape lets this layer extend under the Island inset, so "root" is offset from it.
+            let origin = geo.frame(in: .named("root")).origin
+            let dock = CGPoint(x: self.dock.x - origin.x, y: self.dock.y - origin.y)
             let center = dragPosition ?? (docked ? dock : snapped(
                 CGPoint(x: fractionX * geo.size.width, y: fractionY * geo.size.height), in: geo.size
             ))
@@ -34,7 +37,7 @@ struct FloatingRemoteButton: View {
             }
             button(docked: docked)
                 .position(center)
-                .gesture(drag(from: center, in: geo.size))
+                .gesture(drag(from: center, in: geo.size, dock: dock))
         }
         .ignoresSafeArea(.keyboard)
     }
@@ -73,7 +76,7 @@ struct FloatingRemoteButton: View {
     }
 
     /// Under 5pt of travel is a tap; anything more drags 1:1, then docks or snaps to an edge.
-    private func drag(from center: CGPoint, in size: CGSize) -> some Gesture {
+    private func drag(from center: CGPoint, in size: CGSize, dock: CGPoint) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named("root"))
             .onChanged { value in
                 let t = value.translation
