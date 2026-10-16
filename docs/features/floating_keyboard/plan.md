@@ -1,6 +1,6 @@
 # Floating Keyboard
 
-Status: in progress
+Status: shipped
 
 ## Goal
 
