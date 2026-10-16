@@ -1,21 +1,30 @@
+import RemoteClientCore
 import SwiftUI
 
-/// AssistiveTouch-style button that opens the D-pad. Positions are in the "root"
+/// AssistiveTouch-style button that opens a tool (Remote or Keyboard). Positions are in the "root"
 /// coordinate space, which this layer shares with `RootView`.
-struct FloatingRemoteButton: View {
+struct FloatingToolButton: View {
     let model: RemoteViewModel
+    let glyph: String
+    let label: String
     @Binding var isDocked: Bool
+    // Fractions of the layer size, so the spot survives size and device changes.
+    @Binding var fractionX: Double
+    @Binding var fractionY: Double
+    /// The other tool's fractions while it floats, else nil.
+    let other: CGPoint?
+    /// Keyboard yields to Remote when rotation leaves them overlapping.
+    let yields: Bool
     /// Center of the dock slot.
     let dock: CGPoint
     /// Distances from the layer edges to the box the button snaps within.
     let snap: EdgeInsets
     /// Dropping above this y docks (the portrait header).
     let nearDockAbove: CGFloat
+    /// Landscape: the screen side of the controls column; dropping in line with the slot there docks.
+    let columnSide: HorizontalEdge?
     let open: () -> Void
 
-    // Fractions of the layer size, so the spot survives size and device changes.
-    @AppStorage("remoteFab.x") private var fractionX = 357.0 / 393
-    @AppStorage("remoteFab.y") private var fractionY = 0.66
     @State private var dragOrigin: CGPoint?
     @State private var dragPosition: CGPoint?
     @State private var isNearDock = false
@@ -29,7 +38,8 @@ struct FloatingRemoteButton: View {
             let origin = geo.frame(in: .named("root")).origin
             let dock = CGPoint(x: self.dock.x - origin.x, y: self.dock.y - origin.y)
             let center = dragPosition ?? (docked ? dock : snapped(
-                CGPoint(x: fractionX * geo.size.width, y: fractionY * geo.size.height), in: geo.size
+                CGPoint(x: fractionX * geo.size.width, y: fractionY * geo.size.height),
+                in: geo.size, stacked: yields
             ))
 
             if dragPosition != nil {
@@ -44,7 +54,7 @@ struct FloatingRemoteButton: View {
 
     private func button(docked: Bool) -> some View {
         let size = docked ? 32 : Self.floatingSize
-        return Image(systemName: "appletvremote.gen4")
+        return Image(systemName: glyph)
             .font(.system(size: docked ? 22 : 28))
             .foregroundStyle(docked ? Color.accentColor : Color.primary)
             .frame(width: size, height: size)
@@ -59,7 +69,8 @@ struct FloatingRemoteButton: View {
             }
             .contentShape(Circle())
             .opacity(model.isConnected ? 1 : 0.5)
-            .accessibilityLabel("Remote")
+            .animation(.easeOut(duration: 0.2), value: docked)
+            .accessibilityLabel(label)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { if model.isConnected { open() } }
     }
@@ -91,19 +102,21 @@ struct FloatingRemoteButton: View {
                     y: min(max(origin.y + t.height, radius), size.height - radius)
                 )
                 dragPosition = p
-                isNearDock = p.y < nearDockAbove || hypot(p.x - dock.x, p.y - dock.y) < 60
+                let inLine = columnSide.map { ($0 == .leading ? p.x < size.width / 2 : p.x > size.width / 2)
+                    && abs(p.y - dock.y) < 30 } ?? false
+                isNearDock = p.y < nearDockAbove || inLine || hypot(p.x - dock.x, p.y - dock.y) < 60
             }
             .onEnded { _ in
                 guard let p = dragPosition else {
                     if model.isConnected { open() }
                     return
                 }
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                withAnimation(.easeOut(duration: 0.28)) {
                     if isNearDock {
                         isDocked = true
                     } else {
                         isDocked = false
-                        let s = snapped(p, in: size)
+                        let s = snapped(p, in: size, stacked: true)
                         fractionX = s.x / size.width
                         fractionY = s.y / size.height
                     }
@@ -114,11 +127,19 @@ struct FloatingRemoteButton: View {
             }
     }
 
-    /// Nearest side edge of the snap box.
-    private func snapped(_ p: CGPoint, in size: CGSize) -> CGPoint {
-        let left = snap.leading, right = size.width - snap.trailing
-        return CGPoint(
-            x: p.x < size.width / 2 ? left : right,
+    /// Nearest side edge of the snap box; `stacked` keeps it 70 clear of the other tool on that edge.
+    private func snapped(_ p: CGPoint, in size: CGSize, stacked: Bool = false) -> CGPoint {
+        let at = plainSnap(p, in: size)
+        guard stacked, let other, size.height > snap.top + snap.bottom else { return at }
+        let o = plainSnap(CGPoint(x: other.x * size.width, y: other.y * size.height), in: size)
+        return CGPoint(x: at.x, y: FloatingToolLayout.stackedY(
+            at.y, other: o.x == at.x ? o.y : nil, range: snap.top...(size.height - snap.bottom)
+        ))
+    }
+
+    private func plainSnap(_ p: CGPoint, in size: CGSize) -> CGPoint {
+        CGPoint(
+            x: p.x < size.width / 2 ? snap.leading : size.width - snap.trailing,
             y: min(max(p.y, snap.top), size.height - snap.bottom)
         )
     }
