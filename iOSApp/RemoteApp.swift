@@ -5,6 +5,8 @@ struct RemoteApp: App {
     @State private var model = RemoteViewModel()
     @Environment(\.scenePhase) private var scenePhase
 
+    init() { UIDevice.current.beginGeneratingDeviceOrientationNotifications() }
+
     var body: some Scene {
         WindowGroup {
             RootView(model: model)

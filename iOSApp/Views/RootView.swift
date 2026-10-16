@@ -17,7 +17,7 @@ struct RootView: View {
     /// Real safe-area inset on the Island side, from the window scene.
     @State private var islandInset: CGFloat = 0
 
-    private var columnEdge: CGFloat { 14 }
+    private let columnEdge: CGFloat = 14
     private var farEdge: CGFloat { max(16, islandInset) }
     private var nearInset: CGFloat { columnEdge + 42 }
     private var sideInsets: (leading: CGFloat, trailing: CGFloat) {
@@ -101,6 +101,8 @@ struct RootView: View {
         }
         .animation(.easeOut(duration: 0.2), value: isSpotlight)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Before ignoresSafeArea so it sees the real insets, which change when the interface rotates.
+        .onGeometryChange(for: EdgeInsets.self) { $0.safeAreaInsets } action: { _ in readScene() }
         // Landscape lays out by hand to the screen edges; the keyboard inset still applies.
         .ignoresSafeArea(.container, edges: isLandscape ? [.horizontal, .bottom] : [])
         .coordinateSpace(.named("root"))
@@ -110,12 +112,11 @@ struct RootView: View {
         }
         // Landscape-to-landscape flips keep the size, so listen for the rotation itself.
         .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+            // The notification can beat UIKit's scene update, so read again once it settles.
             DispatchQueue.main.async { readScene() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { readScene() }
         }
-        .onAppear {
-            UIDevice.current.beginGeneratingDeviceOrientationNotifications()
-            readScene()
-        }
+        .onAppear { readScene() }
         .background(Color(.systemBackground))
         // The controls reach the top and bottom edges, where a sideways drag would otherwise
         // flick iOS into another app mid-gesture.
