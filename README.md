@@ -157,8 +157,9 @@ The website is ordinary static HTML in `site/`, deployed by
 `.github/workflows/pages.yml`. The workflow copies the `readme-gifs/*.gif`
 demos into the Pages artifact. No JavaScript or frontend build is required.
 Support is at the homepage's `#support` section, and the canonical published
-privacy policy is [site/privacy.html](site/privacy.html); `PRIVACY.md` points to
-that single maintained policy. The original App Store badge is a local SVG asset.
+privacy policy is the homepage's `#privacy` section in
+[site/index.html](site/index.html); `PRIVACY.md` points to that single
+maintained policy. The original App Store badge is a local SVG asset.
 
 The intended distribution is a free Mac app through GitHub/website and a free
 iPhone app through the App Store. App Store distribution remains a goal, not
