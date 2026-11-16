@@ -1,0 +1,25 @@
+Use your phone as a remote for your computer. Sit back on the couch, at a desk across the room, or in front of a presentation, and control your computer without touching it.
+
+LazyRemote needs the free LazyRemote desktop app. Install it on your computer, open it, then open LazyRemote on your phone. They connect over Bluetooth. No Wi-Fi setup, no account, no sign-in.
+
+TRACKPAD
+Move the cursor with one finger. Tap to click, double-tap or triple-tap, and tap with two fingers to right-click. Scroll with two fingers, long-press to drag, and swipe with three fingers to switch desktops or show all open windows.
+
+REMOTE (D-PAD)
+Use the arrow keys, Space and play/pause to control videos, music, slideshows and presentations. Hold an arrow to repeat it. Skip tracks, and change volume and brightness. Drag the Remote button anywhere on the screen to float it, or back to the top bar to dock it.
+
+KEYBOARD
+Tap the keyboard button and type on your phone. The words appear on your computer as you type, in any language, emoji included. Autocorrect and dictation fixes follow along. Tap Send to press Return.
+
+SEARCH
+Tap the magnifier and type. Your computer's search results show up on your phone as you type. Press go to open the top result.
+
+LANDSCAPE MODE
+Turn your phone sideways and the trackpad fills the screen.
+
+PRIVATE AND SIMPLE
+- Connects directly over Bluetooth
+- Encrypted connection
+- No ads, no tracking, no in-app purchases
+
+Requires the free LazyRemote desktop app on your computer. Download it from the link on this app's support page.

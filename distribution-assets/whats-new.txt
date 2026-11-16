@@ -1,0 +1,4 @@
+- Landscape mode: turn your phone sideways and the trackpad fills the whole screen. Your keyboard, typed text and gestures keep working when you rotate.
+- The Keyboard is now a floating tool next to Remote. Tap it to open a clean typing bar, drag it anywhere to float it, or drop it back in the top bar.
+- Type on your phone and the words appear on your computer as you type.
+- Search results from your computer now show on your phone as you search.

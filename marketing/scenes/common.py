@@ -178,7 +178,10 @@ DOCK = (MAGNIFIER_X - 16 - 12 - 16, HEADER_Y)   # RootView.remoteDock = magnifie
 KB_DOCK = (DOCK[0] - 44, HEADER_Y)              # RootView.keyboardDock: one slot (44) before Remote (x 225)
 
 
-def header(phone, name="MacBook Air"):
+DEVICE_NAME = os.environ.get("LAZYREMOTE_DEVICE_NAME", "MacBook Air")   # store stills override it (no Apple names)
+
+
+def header(phone, name=DEVICE_NAME):
     """RootView.header: StatusLabel (green dot + name, footnote secondary), Keyboard and Remote dock slots
     (drawn by tool_button), Spotlight magnifier, ellipsis.circle."""
     dot = circle(8 * S, GREEN, at=phone.pt(24, HEADER_Y))
@@ -759,7 +762,7 @@ def blurred_screen(phone, radius=14, tools=False):
     (keyed on this file). Black is made transparent so the status bar stays visible through the bleed."""
     out = os.path.join(ROOT, ".build", "marketing")
     key = hashlib.sha1(open(__file__, "rb").read()).hexdigest()[:10]
-    path = os.path.join(out, f"blurred-screen-{key}-{radius}{'-tools' if tools else ''}.png")
+    path = os.path.join(out, f"blurred-screen-{key}-{DEVICE_NAME.replace(' ', '_')}-{radius}{'-tools' if tools else ''}.png")
     if not os.path.exists(path):
         os.makedirs(out, exist_ok=True)
         src, mp4, frame = (os.path.join(out, n) for n in ("snap_scene.py", "snap.mp4", "snap.png"))

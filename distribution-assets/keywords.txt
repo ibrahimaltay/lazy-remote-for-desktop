@@ -1,0 +1,1 @@
+remote,computer,pc,laptop,trackpad,mouse,keyboard,bluetooth,presentation,clicker,slides,media,search
