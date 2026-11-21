@@ -6,7 +6,7 @@ Use your iPhone as a remote for your Mac, over Bluetooth.
 ![iOS 17+](https://img.shields.io/badge/iOS-17%2B-black)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black)
 
-**[Website](https://ibrahimaltay.github.io/lazy-remote-for-desktop/)** · **[Download for Mac](https://github.com/ibrahimaltay/lazy-remote-for-desktop/releases/latest)** · iPhone app coming soon to the App Store
+**[Website](https://ibrahimaltay.github.io/lazy-remote-for-desktop/)** · **[Download for Mac](https://github.com/ibrahimaltay/lazy-remote-for-desktop/releases/latest)** · **[iPhone app on the App Store](https://apps.apple.com/us/app/lazy-remote-for-pc/id6818510186)**
 
 ## See It in Action
 
@@ -54,7 +54,7 @@ Tap the magnifier and type. Your Mac's Spotlight results show up on your iPhone 
 
 ### iPhone
 
-The iPhone app will be on the App Store soon.
+Get the iPhone app from the [App Store](https://apps.apple.com/us/app/lazy-remote-for-pc/id6818510186).
 
 ### Mac
 
@@ -162,8 +162,7 @@ privacy policy is the homepage's `#privacy` section in
 maintained policy. The original App Store badge is a local SVG asset.
 
 The intended distribution is a free Mac app through GitHub/website and a free
-iPhone app through the App Store. App Store distribution remains a goal, not
-already completed.
+iPhone app through the App Store, which is live.
 
 `scripts/release-mac.sh` creates a Developer ID signed, notarized, stapled DMG in
 `.build/release/` and requires a configured notarytool profile. Each release must
