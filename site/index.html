@@ -38,13 +38,13 @@
     .lead { max-width: 520px; margin: 36px auto 0; font-size: 19px; line-height: 1.6; color: rgba(242,239,233,.66); text-wrap: pretty; }
     .downloads { display: flex; justify-content: center; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-top: 48px; }
     .mac-download { display: inline-flex; align-items: center; gap: 12px; height: 52px; padding: 0 22px 0 18px; border-radius: 10px; background: #000; border: 1px solid #a6a6a6; color: #fff; font-family: Helvetica, sans-serif; }
-    .mac-download:hover { border-color: #fff; color: #fff; }
+    .appstore { display: inline-flex; border-radius: 10px; }
+    .mac-download, .appstore { transition: transform .18s ease, box-shadow .18s ease; }
+    .mac-download:hover, .appstore:hover, .mac-download:focus-visible, .appstore:focus-visible { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 24px rgba(0,0,0,.45); color: #fff; }
+    @media (prefers-reduced-motion: reduce) { .mac-download, .appstore { transition: box-shadow .18s ease; } .mac-download:hover, .appstore:hover, .mac-download:focus-visible, .appstore:focus-visible { transform: none; } }
     .mac-download span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
     .mac-download strong { font-size: 19px; font-weight: 600; }
     .mac-download small { font-size: 11px; letter-spacing: .02em; color: #a1a1a6; }
-    .soon { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-    .soon img { display: block; height: 52px; width: auto; opacity: .45; filter: grayscale(1); }
-    .soon span { font: 400 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: rgba(242,239,233,.45); }
     .hero .frame { margin: 110px auto 0; max-width: 1100px; }
     .frame { overflow: hidden; min-width: 0; }
     .frame img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
@@ -128,10 +128,9 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M6.5 10.5 12 16l5.5-5.5M5 20h14"></path></svg>
           <span><strong>MacOS</strong><small>Apple Silicon</small></span>
         </a>
-        <div class="soon">
-          <img src="app-store-badge.svg" width="156" height="52" alt="App Store, coming soon">
-          <span>Coming soon</span>
-        </div>
+        <a class="appstore" href="https://apps.apple.com/us/app/lazy-remote-for-pc/id6818510186">
+          <img src="app-store-badge.svg" width="156" height="52" alt="Download on the App Store">
+        </a>
       </div>
       <div class="frame">
         <img src="readme-gifs/floating-remote.gif" width="960" height="540" alt="The remote controls video playback on a Mac" decoding="async">
@@ -213,7 +212,7 @@
           <ol>
             <li><span>Download <a class="underline" href="https://github.com/ibrahimaltay/lazy-remote-for-desktop/releases/latest/download/LazyRemote.dmg">LazyRemote.dmg</a> and open it.</span></li>
             <li><span>Drag LazyRemote into the Applications folder.</span></li>
-            <li><span>The iPhone app will be on the App Store soon.</span></li>
+            <li><span>Get the iPhone app from the <a class="underline" href="https://apps.apple.com/us/app/lazy-remote-for-pc/id6818510186">App Store</a>.</span></li>
           </ol>
         </div>
 
